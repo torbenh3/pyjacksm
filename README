@@ -1,0 +1,10 @@
+
+python jacksession manager
+==========================
+
+This is a simple sessionmanager for the new jack-session protocol.
+
+install with:
+python setup.py install
+
+

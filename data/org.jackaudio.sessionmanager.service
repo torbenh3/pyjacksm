@@ -1,0 +1,4 @@
+
+[D-BUS Service]
+Name=org.jackaudio.sessionmanager
+Exec=/usr/bin/sessionmanager.py --daemon
