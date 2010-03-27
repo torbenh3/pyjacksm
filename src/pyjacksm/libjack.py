@@ -294,6 +294,7 @@ class JackClient(object):
 	    raise Exception( "got no client name" )
 	self.reg_cb = PortRegistrationCallback( self.port_registration_cb )
 	set_port_registration_callback( self.client, self.reg_cb, None )
+	self.monitor_ports = False
 	self.port_queue = Queue()
 
 	activate( self.client )
@@ -311,9 +312,21 @@ class JackClient(object):
 	if rename_client( self.client, old, new ):
 	    raise Exception
 
+    def start_port_callbacks( self ):
+	self.monitor_ports = True
+
+    def stop_port_callbacks( self ):
+	self.monitor_ports = False
+	try:
+	    while True:
+		self.port_queue.get_nowait()
+	except:
+	    pass
+
     def port_registration_cb( self, port_id, reg, arg ):
-	port_p = port_by_id( self.client, port_id )
-	self.port_queue.put( (port_p,reg) )
+	if self.monitor_ports:
+	    port_p = port_by_id( self.client, port_id )
+	    self.port_queue.put( (port_p,reg) )
 
 
     def session_save( self, path ):

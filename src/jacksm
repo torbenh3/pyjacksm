@@ -6,6 +6,7 @@ import subprocess
 from optparse import OptionParser
 from ConfigParser import SafeConfigParser
 import os
+import time
 
 try:
     import dbus.service
@@ -80,6 +81,8 @@ class SessionManager( object ):
                 conns.append( (p,c) )
         print conns
 
+	self.cl.start_port_callbacks()
+
         # now fire up the processes
         for cname in sd.get_reg_client_names():
             cmd = sd.get_commandline_for_client( cname, self.sessiondir + name + "/" )
@@ -116,11 +119,12 @@ class SessionManager( object ):
             avail_ports.append( pname )
             
 
+	self.cl.stop_port_callbacks()
         print "session restored..."
         return 0
 
     def quit_session( self, name ):
-	self.save_session( name, True )
+	return self.save_session( name, True )
 
 
     def save_session( self, name, quit=False ): 
@@ -133,6 +137,9 @@ class SessionManager( object ):
 	    notify = self.cl.session_save_and_quit( self.sessiondir+name+"/" )
 	else:
 	    notify = self.cl.session_save( self.sessiondir+name+"/" )
+
+	# sleep to free the GIL so that jack callbacks are processed.
+	time.sleep(2)
 
         for n in notify:
             c = g.get_client( n.clientname )
