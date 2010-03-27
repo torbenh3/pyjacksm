@@ -10,7 +10,7 @@ setup(name='pyjacksm',
 	url='http://www.jackaudio.org/',
 	packages=['pyjacksm'],
 	package_dir={'pyjacksm': 'src/pyjacksm'},
-	scripts=['src/sessionmanager.py'],
+	scripts=['src/jacksm'],
 	data_files=[('/usr/share/dbus-1/services', ['data/org.jackaudio.sessionmanager.service'])]
 	)
 
