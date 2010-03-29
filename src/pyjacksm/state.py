@@ -90,7 +90,7 @@ class SessionDom( object ):
 	doc = self.dom.documentElement
 	for c in doc.getElementsByTagName( "jackclient" ):
 	    if c.getAttribute( "jackname" ) == name:
-		client_session_dir = session_dir + c.orig_name 
+		client_session_dir = session_dir + c.orig_name + "/"
 		cmdline = c.getAttribute( "cmdline" )
 
 		return cmdline.replace( "${SESSION_DIR}", client_session_dir )
