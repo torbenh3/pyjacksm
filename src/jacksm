@@ -23,7 +23,6 @@ class SessionManager( object ):
         self.config = SafeConfigParser( defaults )
         self.config.read( os.path.expanduser( "~/.jacksessionrc" ) )
         self.jackname = self.config.get( "DEFAULT", "jackclientname" )
-        self.cl = libjack.JackClient( self.jackname )
         if self.config.has_section( "infra" ):
             self.infra_clients = {}
             for inf in self.config.items( "infra" ):
@@ -46,6 +45,8 @@ class SessionManager( object ):
         if not os.path.exists( self.sessiondir+name+"/session.xml" ):
             print "Session %s does not exist"%name
             return -1
+
+        self.cl = libjack.JackClient( self.jackname, True )
 
         sd = state.SessionDom( self.sessiondir+name+"/session.xml" )
 
@@ -80,8 +81,6 @@ class SessionManager( object ):
             for c in sd.get_connections_for_port( p ):
                 conns.append( (p,c) )
         print conns
-
-	self.cl.start_port_callbacks()
 
         # now fire up the processes
         for cname in sd.get_reg_client_names():
@@ -119,7 +118,7 @@ class SessionManager( object ):
             avail_ports.append( pname )
             
 
-	self.cl.stop_port_callbacks()
+	self.cl.close()
         print "session restored..."
         return 0
 
@@ -131,15 +130,15 @@ class SessionManager( object ):
         if os.path.exists( self.sessiondir+name ):
             print "session %s already exists"%name
             return -1
+
+        self.cl = libjack.JackClient( self.jackname, False )
+
         os.mkdir( self.sessiondir+name )
         g=self.cl.get_graph()
 	if quit:
 	    notify = self.cl.session_save_and_quit( self.sessiondir+name+"/" )
 	else:
 	    notify = self.cl.session_save( self.sessiondir+name+"/" )
-
-	# sleep to free the GIL so that jack callbacks are processed.
-	time.sleep(2)
 
         for n in notify:
             c = g.get_client( n.clientname )
@@ -165,11 +164,10 @@ class SessionManager( object ):
         f.write( sd.get_xml() )
         f.close()
 
+	self.cl.close()
+
         print sd.get_xml()
         return 0
-
-    def exit( self ):
-        self.cl.close()
 
 if have_dbus:
     class DbusSM( dbus.service.Object ):
@@ -241,10 +239,8 @@ if not opt.dbus:
 	if opt.quitas:
 	    sm.quit_session( opt.quitas ) 
     except:
-	sm.exit()
+	sm.cl.close()
 	raise
-
-    sm.exit()
 else:
     if opt.daemon:
 	try:
@@ -255,10 +251,8 @@ else:
 	    loop = gobject.MainLoop()
 	    loop.run()
 	except:
-	    sm.exit()
+	    sm.cl.close()
 	    raise
-
-        sm.exit()
     else:
         session_bus = dbus.SessionBus()
         sm_proxy = session_bus.get_object( "org.jackaudio.sessionmanager", "/org/jackaudio/sessionmanager" )
@@ -275,7 +269,7 @@ else:
                 print i
 
         if opt.quitdaemon:
-            sm_iface.quit()
+            sm_iface.daemon_quit()
 
 
 

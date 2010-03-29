@@ -288,13 +288,13 @@ class NotifyReply(object):
 
 
 class JackClient(object):
-    def __init__( self, name ):
+    def __init__( self, name, monitor ):
 	self.client = client_open( name, 0, None )
 	if not self.client:
 	    raise Exception( "got no client name" )
 	self.reg_cb = PortRegistrationCallback( self.port_registration_cb )
-	set_port_registration_callback( self.client, self.reg_cb, None )
-	self.monitor_ports = False
+	if monitor:
+	    set_port_registration_callback( self.client, self.reg_cb, None )
 	self.port_queue = Queue()
 
 	activate( self.client )
@@ -312,21 +312,9 @@ class JackClient(object):
 	if rename_client( self.client, old, new ):
 	    raise Exception
 
-    def start_port_callbacks( self ):
-	self.monitor_ports = True
-
-    def stop_port_callbacks( self ):
-	self.monitor_ports = False
-	try:
-	    while True:
-		self.port_queue.get_nowait()
-	except:
-	    pass
-
     def port_registration_cb( self, port_id, reg, arg ):
-	if self.monitor_ports:
-	    port_p = port_by_id( self.client, port_id )
-	    self.port_queue.put( (port_p,reg) )
+	port_p = port_by_id( self.client, port_id )
+	self.port_queue.put( (port_p,reg) )
 
 
     def session_save( self, path ):
