@@ -11,7 +11,7 @@ setup(name='pyjacksm',
 	packages=['pyjacksm'],
 	package_dir  = {'pyjacksm': 'src/pyjacksm'},
 	package_data = {'pyjacksm': ["data/*.glade", "data/jack_sm_icon.png"] },
-	scripts=['src/jacksm'],
+	scripts=['src/jacksm', 'src/jacksmtray'],
 	data_files=[('/usr/share/dbus-1/services', ['data/org.jackaudio.sessionmanager.service'])]
 	)
 
