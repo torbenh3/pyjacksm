@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<interface>
+  <requires lib="gtk+" version="2.16"/>
+  <!-- interface-naming-policy project-wide -->
+  <object class="GtkMenu" id="popup_menu">
+    <property name="visible">True</property>
+    <child>
+      <object class="GtkMenuItem" id="menuitem5">
+        <property name="visible">True</property>
+        <property name="label" translatable="yes">Quit Session</property>
+        <property name="use_underline">True</property>
+        <signal name="activate" handler="quit_cb"/>
+      </object>
+    </child>
+    <child>
+      <object class="GtkSeparatorMenuItem" id="menuitem6">
+        <property name="visible">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="menuitem1">
+        <property name="visible">True</property>
+        <property name="label" translatable="yes">Load Session</property>
+        <property name="use_underline">True</property>
+        <signal name="activate" handler="load_cb"/>
+      </object>
+    </child>
+    <child>
+      <object class="GtkSeparatorMenuItem" id="menuitem4">
+        <property name="visible">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="menuitem2">
+        <property name="visible">True</property>
+        <property name="label" translatable="yes">Save As</property>
+        <property name="use_underline">True</property>
+        <signal name="activate" handler="save_as_cb"/>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="menuitem3">
+        <property name="visible">True</property>
+        <property name="label" translatable="yes">Save</property>
+        <property name="use_underline">True</property>
+        <signal name="activate" handler="save_cb"/>
+      </object>
+    </child>
+  </object>
+</interface>
