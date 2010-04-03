@@ -1,4 +1,4 @@
-#/usr/bin/env python
+#!/usr/bin/env python
 
 import gtk
 import dbus.service
@@ -11,7 +11,7 @@ class builder_base( gtk.Builder ):
 	self.add_from_file( os.path.join( pyjacksm.__path__[0], "data", filename ))
 
 
-class dialog1( object ):
+class load_dialog( object ):
     def __init__( self ):
 	bb = builder_base( "load_dialog.glade" )
 
@@ -47,6 +47,11 @@ class dialog1( object ):
     def cancel_clicked( self, data ):
 	self.dialog.destroy()
 
+class over_dialog( object ):
+    def __init__( self ):
+	bb = builder_base( "overwrite_dialog.glade" )
+	self.dialog    = bb.get_object( "overwrite_dialog" )
+
 class save_dialog( object ):
     def __init__( self ):
 	bb = builder_base( "save_dialog.glade" )
@@ -81,7 +86,17 @@ class save_dialog( object ):
 
 
     def ok_clicked( self, data ):
-	print self.entry.get_text()
+	sname = self.entry.get_text()
+
+	if sm_iface.session_exists( sname ):
+	    q = gtk.MessageDialog( type=gtk.MESSAGE_QUESTION, buttons=gtk.BUTTONS_YES_NO, message_format="Session already exists. Overwrite ?" )
+	    r = q.run()
+	    q.destroy()
+	    if r == gtk.RESPONSE_YES:
+		sm_iface.save_over( sname )
+	else:
+	    sm_iface.save_as( sname )
+
 	self.dialog.destroy()
 
     def cancel_clicked( self, data ):
@@ -93,22 +108,31 @@ class popup_menu(object):
 	bb = builder_base( "session_popup.glade" )
 
 	self.menu = bb.get_object( "popup_menu" )
+	self.quit = bb.get_object( "quit_item" )
+
+	if not sm_iface.current_session():
+	    self.quit.set_sensitive( False )
+
 	bb.connect_signals( self, None )
 
 	self.menu.popup ( None, None, None, button, activate_time )
 
     def save_cb( self, data ):
-	print "save"
+	if sm_iface.current_session():
+	    sm_iface.save()
+	else:
+	    d = save_dialog()
 
     def save_as_cb( self, data ):
 	d = save_dialog()
 	print "save as"
 
     def load_cb( self, data ):
-	print "load"
+	d = load_dialog()
 
     def quit_cb( self, data ):
-	print "quit"
+	if sm_iface.current_session():
+	    sm_iface.quit()
 
 
 def icon_activate( icon ):

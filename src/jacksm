@@ -56,6 +56,9 @@ class SessionManager( object ):
     def rm_session( self, name ):
 	shutil.rmtree( os.path.join( self.sessiondir, name ) )
 
+    def session_exists( self, name ):
+	return os.path.exists( self.sessiondir+name+"/session.xml" )
+
     def load_session( self, name ):
         if not os.path.exists( self.sessiondir+name+"/session.xml" ):
             print "Session %s does not exist"%name
@@ -191,14 +194,18 @@ if have_dbus:
                     "/org/jackaudio/sessionmanager",
                     dbus.service.BusName( "org.jackaudio.sessionmanager", bus=dbus.SessionBus() ) )
 
-        @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager",
-                in_signature="s", out_signature="i" )
+        @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="s", out_signature="i" )
         def save_as( self, name ):
 	    self.sm.current_session = name
             return self.sm.save_session( name )
 
-        @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager",
-                in_signature="", out_signature="i" )
+        @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="s", out_signature="i" )
+        def save_over( self, name ):
+	    self.sm.move_session( name, "jacksm-tmp-save" )
+	    self.sm.current_session = name
+            return self.sm.save_session( name )
+
+        @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="", out_signature="i" )
         def save( self ):
 	    if not self.sm.current_session:
 		return -1
@@ -211,8 +218,7 @@ if have_dbus:
 	    self.sm.rm_session( "jacksm-tmp-save" )
 	    return retval
 
-        @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager",
-                in_signature="", out_signature="i" )
+        @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="", out_signature="i" )
         def quit( self ):
 	    if not self.sm.current_session:
 		return -1
@@ -226,14 +232,12 @@ if have_dbus:
 	    self.sm.rm_session( "jacksm-tmp-save" )
 	    return retval
 
-        @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager",
-                in_signature="s", out_signature="i" )
+        @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="s", out_signature="i" )
         def quit_as( self, name ):
 	    self.sm.current_session = None
             return self.sm.quit_session( name )
 
-        @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager",
-                in_signature="s", out_signature="i" )
+        @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="s", out_signature="i" )
         def load( self, name ):
 	    if not self.sm.current_session:
 		self.sm.current_session = name
@@ -242,18 +246,19 @@ if have_dbus:
 
             return self.sm.load_session( name )
 
-        @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager",
-                in_signature="", out_signature="as" )
+        @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="", out_signature="as" )
         def list( self ):
             return self.sm.list_projects()
 
-        @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager",
-                in_signature="", out_signature="s" )
+        @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="", out_signature="s" )
         def current_session( self ):
             return self.sm.get_current_session()
 
-        @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager",
-                in_signature="", out_signature="" )
+        @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="s", out_signature="b" )
+        def session_exists( self, name ):
+            return self.sm.session_exists( name )
+
+        @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="", out_signature="" )
         def daemon_quit( self ):
             loop.quit() 
 

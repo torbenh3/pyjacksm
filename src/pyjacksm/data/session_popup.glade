@@ -5,7 +5,7 @@
   <object class="GtkMenu" id="popup_menu">
     <property name="visible">True</property>
     <child>
-      <object class="GtkMenuItem" id="menuitem5">
+      <object class="GtkMenuItem" id="quit_item">
         <property name="visible">True</property>
         <property name="label" translatable="yes">Quit Session</property>
         <property name="use_underline">True</property>
