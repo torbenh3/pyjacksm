@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+from distutils.core import setup, Extension
 
 setup(name='pyjacksm',
 	version='0.1',
@@ -12,6 +12,9 @@ setup(name='pyjacksm',
 	package_dir  = {'pyjacksm': 'src/pyjacksm'},
 	package_data = {'pyjacksm': ["data/*.glade", "data/jack_sm_icon.png"] },
 	scripts=['src/jacksm', 'src/jacksmtray'],
-	data_files=[('/usr/share/dbus-1/services', ['data/org.jackaudio.sessionmanager.service'])]
+	data_files=[('/usr/share/dbus-1/services', ['data/org.jackaudio.sessionmanager.service'])],
+        
+        ext_modules=[Extension('pyjacksm.bpjack', ['src/bpjack.cc'], libraries=['jack', 'boost_python', 'boost_thread'])]
+
 	)
 

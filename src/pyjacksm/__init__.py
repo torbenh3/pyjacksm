@@ -1,2 +1,2 @@
 
-__all__ = ['libjack', 'state']
+__all__ = ['bpjack', 'libjack', 'state']
