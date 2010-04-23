@@ -17,7 +17,7 @@ except:
     have_dbus = False
 
 
-defaults = { "jackclientname": "sessionmanager", "sessiondir": "~/jackSessions" }
+defaults = { "jackclientname": "sessionmanager", "sessiondir": "~/jackSessions", "templatedir": "~/.jackSession_templates" }
 
 class SessionManager( object ):
     def __init__( self ):
@@ -37,11 +37,21 @@ class SessionManager( object ):
             print "Sessiondir %s does not exist. Creating it..."%self.sessiondir
             os.mkdir( self.sessiondir )
 
+        self.templatedir = os.path.expanduser( self.config.get( "DEFAULT", "templatedir" ) ) + "/" 
+        if not os.path.exists( self.templatedir ):
+            print "Templatedir %s does not exist. Creating it..."%self.templatedir
+            os.mkdir( self.templatedir )
+
 	self.current_session = None
 
     def list_projects( self ):
         files = os.listdir( self.sessiondir )
         files = filter( lambda x: os.path.isdir( os.path.join( self.sessiondir, x ) ), files )
+        return files
+
+    def list_templates( self ):
+        files = os.listdir( self.templatedir )
+        files = filter( lambda x: os.path.isdir( os.path.join( self.templatedir, x ) ), files )
         return files
 
     def get_current_session( self ):
@@ -59,14 +69,19 @@ class SessionManager( object ):
     def session_exists( self, name ):
 	return os.path.exists( self.sessiondir+name+"/session.xml" )
 
-    def load_session( self, name ):
-        if not os.path.exists( self.sessiondir+name+"/session.xml" ):
+    def load_session( self, name, template=False ):
+        if template:
+            path = self.templatedir
+        else:
+            path = self.sessiondir
+
+        if not os.path.exists( path+name+"/session.xml" ):
             print "Session %s does not exist"%name
             return -1
 
         self.cl = libjack.JackClient( self.jackname, True )
 
-        sd = state.SessionDom( self.sessiondir+name+"/session.xml" )
+        sd = state.SessionDom( path+name+"/session.xml" )
 
         g=self.cl.get_graph()
 
@@ -102,7 +117,7 @@ class SessionManager( object ):
 
         # now fire up the processes
         for cname in sd.get_reg_client_names():
-            cmd = sd.get_commandline_for_client( cname, self.sessiondir + name + "/" )
+            cmd = sd.get_commandline_for_client( cname, path + name + "/" )
             children.append( subprocess.Popen( cmd, shell=True ) )
 
         avail_ports = g.get_port_list()
@@ -143,8 +158,16 @@ class SessionManager( object ):
     def quit_session( self, name ):
 	return self.save_session( name, True )
 
-    def save_session( self, name, quit=False ): 
-        if os.path.exists( self.sessiondir+name ):
+    def save_template( self, name ):
+        return self.save_session( name, False, True )
+
+    def save_session( self, name, quit=False, template=False ): 
+        if template:
+            path = self.templatedir
+        else:
+            path = self.sessiondir
+
+        if os.path.exists( path+name ):
             print "session %s already exists"%name
             return -1
 
@@ -153,9 +176,11 @@ class SessionManager( object ):
         os.mkdir( self.sessiondir+name )
         g=self.cl.get_graph()
 	if quit:
-	    notify = self.cl.session_save_and_quit( self.sessiondir+name+"/" )
+	    notify = self.cl.session_save_and_quit( path+name+"/" )
+        elif template:
+	    notify = self.cl.session_save_template( path+name+"/" )
 	else:
-	    notify = self.cl.session_save( self.sessiondir+name+"/" )
+	    notify = self.cl.session_save( path+name+"/" )
 
         for n in notify:
             c = g.get_client( n.clientname )
@@ -177,7 +202,7 @@ class SessionManager( object ):
         for i in g.clients.values():
             sd.add_client(i)
 
-        f = file( self.sessiondir+name+"/session.xml", "w" )
+        f = file( path+name+"/session.xml", "w" )
         f.write( sd.get_xml() )
         f.close()
 
@@ -198,6 +223,10 @@ if have_dbus:
         def save_as( self, name ):
 	    self.sm.current_session = name
             return self.sm.save_session( name )
+
+        @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="s", out_signature="i" )
+        def save_template( self, name ):
+            return self.sm.save_template( name )
 
         @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="s", out_signature="i" )
         def save_over( self, name ):
@@ -246,9 +275,17 @@ if have_dbus:
 
             return self.sm.load_session( name )
 
+        @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="s", out_signature="i" )
+        def load_template( self, name ):
+            return self.sm.load_session( name, True )
+
         @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="", out_signature="as" )
         def list( self ):
             return self.sm.list_projects()
+
+        @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="", out_signature="as" )
+        def list_templates( self ):
+            return self.sm.list_templates()
 
         @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="", out_signature="s" )
         def current_session( self ):

@@ -12,18 +12,23 @@ class builder_base( gtk.Builder ):
 
 
 class load_dialog( object ):
-    def __init__( self ):
+    def __init__( self, template=False ):
 	bb = builder_base( "load_dialog.glade" )
 
 	self.dialog    = bb.get_object( "dialog1" )
 	self.treeview  = bb.get_object( "treeview1" )
 	self.listmodel = bb.get_object( "liststore1" )
+        self.template  = template
 
 	bb.connect_signals( self, None )
 
 	self.treeview.append_column( gtk.TreeViewColumn( "name", gtk.CellRendererText(), text=0 ) )
 
-	projects = sm_iface.list()
+        if template:
+            projects = sm_iface.list_templates()
+        else:
+            projects = sm_iface.list()
+
 	projects.sort()
 
 	for i in projects:
@@ -41,7 +46,10 @@ class load_dialog( object ):
 
 	value = model.get_value( it, 0 )
 
-	sm_iface.load( value )
+        if self.template:
+            sm_iface.load_template( value )
+        else:
+            sm_iface.load( value )
 	self.dialog.destroy()
 
     def cancel_clicked( self, data ):
@@ -53,19 +61,24 @@ class over_dialog( object ):
 	self.dialog    = bb.get_object( "overwrite_dialog" )
 
 class save_dialog( object ):
-    def __init__( self ):
+    def __init__( self, template=False ):
 	bb = builder_base( "save_dialog.glade" )
 
 	self.dialog    = bb.get_object( "save_dialog" )
 	self.treeview  = bb.get_object( "save_tree" )
 	self.listmodel = bb.get_object( "liststore1" )
 	self.entry     = bb.get_object( "name_entry" )
+        self.template  = template
 
 	bb.connect_signals( self, None )
 
 	self.treeview.append_column( gtk.TreeViewColumn( "name", gtk.CellRendererText(), text=0 ) )
 
-	projects = sm_iface.list()
+        
+        if template:
+            projects = sm_iface.list_templates()
+        else:
+            projects = sm_iface.list()
 	projects.sort()
 
 	for i in projects:
@@ -125,10 +138,15 @@ class popup_menu(object):
 
     def save_as_cb( self, data ):
 	d = save_dialog()
-	print "save as"
+
+    def save_template_cb( self, data ):
+        d = save_dialog( True )
 
     def load_cb( self, data ):
 	d = load_dialog()
+
+    def load_template_cb( self, data ):
+	d = load_dialog( True )
 
     def quit_cb( self, data ):
 	if sm_iface.current_session():
