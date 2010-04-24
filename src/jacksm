@@ -124,34 +124,41 @@ class SessionManager( object ):
         # wait for ports to appear, and connect em.
 
         while len(conns) > 0:
-            p = self.cl.port_queue.get()
-            print p[0],p[1]
-            pname = libjack.port_name(p[0])
+            pname = self.cl.pop_port()
+            print "---------- got port ", pname
+            to_remove = []
             for c1 in conns:
+                print "check ", c1
                 if c1[0]==pname:
+                    print "take1"
                     if c1[1] in avail_ports:
+                        print "take2"
                         self.cl.connect( pname, c1[1] )
 
-                        conns.remove( c1 )
+                        to_remove.append( c1 )
                         if (c1[1],c1[0]) in conns:
-                            conns.remove( (c1[1],c1[0]) )
-
-                    break
+                            to_remove.append( (c1[1],c1[0]) )
 
                 if c1[1]==pname:
+                    print "take3"
                     if c1[0] in avail_ports:
+                        print "take4"
                         self.cl.connect( pname, c1[0] )
 
-                        conns.remove( c1 )
+                        to_remove.append( c1 )
                         if (c1[1],c1[0]) in conns:
-                            conns.remove( (c1[1],c1[0]) )
-                
-                    break
+                            to_remove.append( (c1[1],c1[0]) )
+
+            for r in to_remove:
+                print "remove ", r
+                try:
+                    conns.remove( r )
+                except:
+                    print "fail"
 
             avail_ports.append( pname )
             
 
-	self.cl.close()
         print "session restored..."
         return 0
 
@@ -205,8 +212,6 @@ class SessionManager( object ):
         f = file( path+name+"/session.xml", "w" )
         f.write( sd.get_xml() )
         f.close()
-
-	self.cl.close()
 
         print sd.get_xml()
         return 0
@@ -329,30 +334,22 @@ oparser.add_option( "--renames", action="store_true", dest="renames", default=Fa
 
 if not opt.dbus:
     sm = SessionManager()
-    try:
-	if opt.saveas:
-	    sm.save_session( opt.saveas )
+    if opt.saveas:
+        sm.save_session( opt.saveas )
 
-	if opt.load:
-	    sm.load_session( opt.load )
+    if opt.load:
+        sm.load_session( opt.load )
 
-	if opt.quitas:
-	    sm.quit_session( opt.quitas ) 
-    except:
-	sm.cl.close()
-	raise
+    if opt.quitas:
+        sm.quit_session( opt.quitas ) 
 else:
     if opt.daemon:
-	try:
-	    sm = SessionManager()
-	    from dbus.mainloop.glib import DBusGMainLoop
-	    DBusGMainLoop(set_as_default=True)
-	    dbsm = DbusSM( sm )
-	    loop = gobject.MainLoop()
-	    loop.run()
-	except:
-	    sm.cl.close()
-	    raise
+        sm = SessionManager()
+        from dbus.mainloop.glib import DBusGMainLoop
+        DBusGMainLoop(set_as_default=True)
+        dbsm = DbusSM( sm )
+        loop = gobject.MainLoop()
+        loop.run()
     else:
         session_bus = dbus.SessionBus()
         sm_proxy = session_bus.get_object( "org.jackaudio.sessionmanager", "/org/jackaudio/sessionmanager" )

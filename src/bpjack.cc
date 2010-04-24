@@ -147,10 +147,10 @@ JackClient::reserve_client_name( const std::string & name, const std::string & u
 }
 
 std::vector<JackSessionCommand> 
-JackClient::session_notify( const std::string & target, jack_session_event_type_t type, const std::string & path )
+JackClient::session_notify( const std::string & target, int type, const std::string & path )
 {
     vector<JackSessionCommand> retval;
-    jack_session_command_t *cmds = jack_session_notify( _client, target.c_str(), type, path.c_str() );
+    jack_session_command_t *cmds = jack_session_notify( _client, target.c_str(), (jack_session_event_type_t) type, path.c_str() );
     if (cmds == 0)
         return retval;
 
@@ -161,6 +161,20 @@ JackClient::session_notify( const std::string & target, jack_session_event_type_
     return retval;
 }
 
+std::vector<JackSessionCommand> 
+JackClient::session_notify_any( int type, const std::string & path )
+{
+    vector<JackSessionCommand> retval;
+    jack_session_command_t *cmds = jack_session_notify( _client, NULL, (jack_session_event_type_t) type, path.c_str() );
+    if (cmds == 0)
+        return retval;
+
+    for (int i=0; cmds[i].uuid != 0; i++)
+        retval.push_back( JackSessionCommand(& cmds[i]) );
+
+    jack_session_commands_free( cmds );
+    return retval;
+}
 std::string 
 JackClient::get_client_name_by_uuid( const std::string & uuid )
 {
@@ -207,7 +221,7 @@ BOOST_PYTHON_MODULE(bpjack)
     class_<JackSessionCommand>("JackSessionCommand", no_init)
         .def_readonly( "uuid", &JackSessionCommand::uuid )
         .def_readonly( "clientname", &JackSessionCommand::clientname )
-        .def_readonly( "command", &JackSessionCommand::command )
+        .def_readonly( "commandline", &JackSessionCommand::command )
         .def_readonly( "flags", &JackSessionCommand::flags );
 
     class_<JackPort, boost::shared_ptr<JackPort> >("JackPort", no_init)
@@ -222,7 +236,9 @@ BOOST_PYTHON_MODULE(bpjack)
         .def("port_by_name",    &JackClient::port_by_name )
         .def("get_ports",       &JackClient::get_ports )
         .def("session_notify",  &JackClient::session_notify )
+        .def("session_notify_any",  &JackClient::session_notify_any )
         .def("get_client_name_by_uuid", &JackClient::get_client_name_by_uuid )
+        .def("reserve_client_name", &JackClient::reserve_client_name )
         .def("connect", &JackClient::connect )
         .def("disconnect", &JackClient::disconnect )
         .def("pop_port", &JackClient::pop_port );
