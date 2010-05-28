@@ -100,7 +100,8 @@ class SessionDom( object ):
 	doc = self.dom.documentElement
 	for c in doc.getElementsByTagName( "jackclient" ):
 	    if c.getAttribute( "infra" ) != "True":
-		retval.append( (c.getAttribute( "uuid" ), c.getAttribute( "jackname" )) )
+                if len(c.getElementsByTagName( "port" )):
+                    retval.append( (c.getAttribute( "uuid" ), c.getAttribute( "jackname" )) )
 
 	return retval
 

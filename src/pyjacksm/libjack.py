@@ -185,6 +185,8 @@ class JackClient(object):
     def pop_port( self ):
         return self.client.pop_port()
 
+    def abort_monitor( self ):
+        self.client.abort_monitor()
 
 
 

@@ -47,12 +47,14 @@ class JackClientSingleton
 
         std::string pop_port();
         jack_client_t * cl() { return _client; }
+        void abort_monitor();
 
     private:
         jack_client_t *_client;
 	boost::mutex _queue_lock;
         boost::condition_variable _queue_cond;
         std::queue<std::string> _port_queue;
+        bool _abort;
 
         static void port_reg_cb_aux( jack_port_id_t port_id, int reg, void *arg );
         void port_reg_cb( jack_port_id_t port_id, int reg );
@@ -82,6 +84,7 @@ class JackClient : public boost::enable_shared_from_this<JackClient>
         jack_client_t * cl() { return _client; }
 
         std::string pop_port() { return _singleton->pop_port(); }
+        void abort_monitor() { _singleton->abort_monitor(); }
 
     private:
         JackClient( boost::shared_ptr<JackClientSingleton> singleton );

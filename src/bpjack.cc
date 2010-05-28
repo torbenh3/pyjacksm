@@ -1,6 +1,7 @@
 
 #include "bpjack.h"
 #include "boost/python.hpp"
+#include "ceval.h"
 
 using namespace std;
 
@@ -55,9 +56,11 @@ JackPort::JackPort( boost::shared_ptr<JackClient> client, jack_port_t *port )
 
 JackClientSingleton::JackClientSingleton( const std::string & name )
 {
+    _abort = false;
     _client = jack_client_open( name.c_str(), JackNullOption, NULL );
     jack_set_port_registration_callback( _client, JackClientSingleton::port_reg_cb_aux, this );
     jack_activate( _client );
+
 }
 
 JackClientSingleton::~JackClientSingleton()
@@ -65,13 +68,26 @@ JackClientSingleton::~JackClientSingleton()
     jack_client_close( _client );
 }
 
-std::string 
+void JackClientSingleton::abort_monitor()
+{
+    boost::unique_lock<boost::mutex> guard( _queue_lock );
+    _abort = true;
+    _queue_cond.notify_all();
+}
+
+string 
 JackClientSingleton::pop_port()
 {
     boost::unique_lock<boost::mutex> guard( _queue_lock );
 
-    if (_port_queue.empty())
+    if (_port_queue.empty()) {
+        Py_BEGIN_ALLOW_THREADS
         _queue_cond.wait( guard );
+        Py_END_ALLOW_THREADS
+    }
+    
+    if (_abort)
+        return string("");
 
     string retval = _port_queue.front();
     _port_queue.pop();
@@ -241,5 +257,6 @@ BOOST_PYTHON_MODULE(bpjack)
         .def("reserve_client_name", &JackClient::reserve_client_name )
         .def("connect", &JackClient::connect )
         .def("disconnect", &JackClient::disconnect )
-        .def("pop_port", &JackClient::pop_port );
+        .def("pop_port", &JackClient::pop_port )
+        .def("abort_monitor", &JackClient::abort_monitor );
 }
