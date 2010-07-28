@@ -10,6 +10,7 @@
 #include <vector>
 #include <string>
 #include <queue>
+#include <exception>
 
 class JackClient;
 
@@ -92,3 +93,14 @@ class JackClient : public boost::enable_shared_from_this<JackClient>
         jack_client_t *_client;
 
 };
+
+
+class NoJackClientException : public std::exception
+{
+    public:
+	NoJackClientException () {}
+	virtual ~NoJackClientException() throw() {}
+
+	virtual const char * what() const throw() { return (char *) "Cant create JackClient"; }
+};
+

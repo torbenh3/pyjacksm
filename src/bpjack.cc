@@ -58,6 +58,9 @@ JackClientSingleton::JackClientSingleton( const std::string & name )
 {
     _abort = false;
     _client = jack_client_open( name.c_str(), JackNullOption, NULL );
+    if (_client==0)
+       throw NoJackClientException();
+
     jack_set_port_registration_callback( _client, JackClientSingleton::port_reg_cb_aux, this );
     jack_activate( _client );
 
@@ -215,6 +218,11 @@ JackClient::JackClient( boost::shared_ptr<JackClientSingleton> singleton )
     _singleton = singleton;
 }
 
+void translator( NoJackClientException const& x )
+{
+       PyErr_SetString(PyExc_RuntimeError, x.what());
+}
+
 
 
 BOOST_PYTHON_MODULE(bpjack)
@@ -259,4 +267,7 @@ BOOST_PYTHON_MODULE(bpjack)
         .def("disconnect", &JackClient::disconnect )
         .def("pop_port", &JackClient::pop_port )
         .def("abort_monitor", &JackClient::abort_monitor );
+
+     register_exception_translator<NoJackClientException>(translator);
+
 }
