@@ -21,7 +21,7 @@
                   <object class="GtkTreeView" id="treeview">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
-                    <property name="model"></property>
+                    <signal name="row_activated" handler="row_activated_cb"/>
                   </object>
                 </child>
               </object>
@@ -41,6 +41,7 @@
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="editable">False</property>
+                    <property name="buffer">textbuffer</property>
                   </object>
                 </child>
               </object>
@@ -67,14 +68,7 @@
       </object>
     </child>
   </object>
-  <object class="GtkTreeStore" id="treestore">
-    <columns>
-      <!-- column-name label -->
-      <column type="gchararray"/>
-      <!-- column-name session -->
-      <column type="gchararray"/>
-      <!-- column-name client_name -->
-      <column type="gchararray"/>
-    </columns>
+  <object class="GtkTextBuffer" id="textbuffer">
+    <property name="text" translatable="yes">hello</property>
   </object>
 </interface>

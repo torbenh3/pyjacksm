@@ -85,12 +85,14 @@ class loading_dialog( object ):
 
 
 class main_win( object ):
-    def __init__( self, session ):
+    def __init__( self ):
 	bb = builder_base( "main_win.glade" )
 	self.window    = bb.get_object( "window" )
         self.treeview  = bb.get_object( "treeview" )
         self.textview  = bb.get_object( "textview" )
-        self.treestore = bb.get_object( "treestore" )
+        self.treestore = gtk.TreeStore( str, str, str, object )
+	self.treeview.set_model(self.treestore)
+	self.textbuffer= bb.get_object( "textbuffer" )
 
 	bb.connect_signals( self, None )
 
@@ -105,13 +107,25 @@ class main_win( object ):
 
         for s in sessions_iface:
             sname = s.name()
-            siter = self.treeview.append( None, (sname, sname, None) )
+            siter = self.treestore.append( None, (sname, sname, None, s) )
             cls = s.get_clients()
             for c in cls:
-                self.treeview.append( siter, (c, sname, c) )
+                self.treestore.append( siter, (c, sname, c, s) )
 
         self.window.show()
 
+    def row_activated_cb(self, treeview, path, col):
+	sess = self.treestore[path][3]
+	clie = self.treestore[path][2]
+	
+	print sess, clie
+	if clie != None:
+	    cl_log = sess.get_client_log( clie )
+	    self.textbuffer.set_text( cl_log )
+	    self.textview.scroll_to_iter( self.textbuffer.get_end_iter(), 0 )
+
+
+		
 
 
 class over_dialog( object ):
@@ -213,7 +227,7 @@ class popup_menu(object):
 
 
 def icon_activate( icon ):
-    d = dialog1()
+    main_w = main_win()
 
 def icon_popup( icon, button, activate_time ):
     p = popup_menu( button, activate_time )
@@ -230,11 +244,12 @@ def get_sm_iface():
 from dbus.mainloop.glib import DBusGMainLoop
 DBusGMainLoop(set_as_default=True)
 
+main_w = None
 sm_iface = get_sm_iface()
 
 sicon = gtk.status_icon_new_from_file( os.path.join( pyjacksm.__path__[0], "data", "jack_sm_icon.png" ))
 
-#sicon.connect( "activate", icon_activate )
+sicon.connect( "activate", icon_activate )
 sicon.connect( "popup-menu", icon_popup )
 
 gtk.main()
