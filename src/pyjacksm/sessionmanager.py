@@ -73,7 +73,7 @@ class Session (object):
         return self.procmons.keys()
 
     def get_client_log (self, client):
-        log = self.procmons[client]
+        log = self.procmons[client].log
         return string.join( log, '\n' )
 
     def abort_load (self):
