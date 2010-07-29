@@ -1,4 +1,4 @@
 
 [D-BUS Service]
 Name=org.jackaudio.sessionmanager
-Exec=/usr/bin/jacksm --daemon
+Exec=/usr/local/bin/jacksmdaemon
