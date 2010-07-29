@@ -105,6 +105,8 @@ class main_win( object ):
             s_iface = dbus.Interface( s_proxy, "org.jackaudio.session" )
             sessions_iface.append(s_iface)
 
+	siter = self.treestore.append( None, ("logo", "logo", None, sessions_iface) )
+
         for s in sessions_iface:
             sname = s.name()
             siter = self.treestore.append( None, (sname, sname, None, s) )
