@@ -121,7 +121,6 @@ class main_win( object ):
 	sess = self.treestore[path][3]
 	clie = self.treestore[path][2]
 	
-	print sess, clie
 	if clie != None:
 	    cl_log = sess.get_client_log( clie )
 	    self.textbuffer.set_text( cl_log )
@@ -170,7 +169,6 @@ class save_dialog( object ):
 	    return
 
 	value = model.get_value( it, 0 )
-	print value
 	self.entry.set_text( value )
 
 
