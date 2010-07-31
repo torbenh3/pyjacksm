@@ -202,7 +202,7 @@ class popup_menu(object):
 
 	bb.connect_signals( self, None )
 
-	self.menu.popup ( None, None, None, button, activate_time )
+	self.menu.popup ( None, None, gtk.status_icon_position_menu, button, activate_time, sicon )
 
     def save_cb( self, data ):
 	if sm_iface.current_session():
