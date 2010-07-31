@@ -68,6 +68,7 @@ class loading_dialog( object ):
         bb.connect_signals( self, None )
         self.session.connect_to_signal("progress_signal", self.progress_cb )
         self.session.connect_to_signal("finished_signal", self.finished_cb )
+	self.dialog.set_keep_above(True)
 
         self.dialog.show()
 
