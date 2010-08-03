@@ -55,6 +55,7 @@ class Port( object ):
 	self.client = client
 
 	self.conns = []
+	self.named_connections = []
 
 
     def get_name( self ):
@@ -111,6 +112,7 @@ class Client( object ):
 	self.isinfra = False
 	self.uuid = None
 	self.hide = False
+	self.dummy = False
 
     def get_commandline( self ):
 	if self.commandline:
@@ -148,12 +150,17 @@ class DomClient( Client ):
 
     def __init__( self, node ):
 	"""Create DomClient from a DomNode..."""
-	super(LiveClient,self).__init__( node.getAttribute( "jackname" ) )
+	super(DomClient,self).__init__( node.getAttribute( "jackname" ) )
 	self.uuid = node.getAttribute( "uuid" )
 	self.cmdline = node.getAttribute( "cmdline" )
 
 	for p in node.getElementsByTagName( "port" ):
 	    self.ports.append( DomPort( self, p ) )
+
+class DummyClient( Client ):
+    def __init__( self, name ):
+	super(DummyClient,self).__init__( name )
+	self.dummy = True
 
 
 class Graph( object ):
@@ -241,8 +248,34 @@ class DomGraph( Graph ):
 
 	for port in self.iter_ports():
 	    for dst in port.named_connections:
-		port.conns.append( self.get_port( dst ) )
+		port.conns.append( self.ensure_port( dst ) )
+
+    def ensure_port( self, portname ):
+	pn = PortName( portname )
+
+	try:
+	    cl = self.get_client( pn.get_clientname() )
+	except KeyError:
+	    cl = Client( pn.get_clientname() ) 
+	    self.clients.append( cl )
+
+	try:
+	    po = cl.get_port( pn.get_shortname() )
+	except KeyError:
+	    po = Port( cl, pn, "", 0 )
+	    cl.ports.append( po )
+
+	return po
+
 	
+from xml.dom.minidom import getDOMImplementation, parse, Element
+
+class FileGraph( DomGraph ):
+    """A Graph built from an xml File"""
+
+    def __init__( self, filename ):
+    	dom = parse( filename )
+	super(FileGraph, self).__init__( dom )
 
 
 if __name__ == "__main__":
