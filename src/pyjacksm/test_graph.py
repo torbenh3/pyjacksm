@@ -1,7 +1,7 @@
 
 from StringIO import StringIO
 
-import graph
+from domgraph import FileGraph
 import unittest
 
 
@@ -29,7 +29,7 @@ def get_test_session():
 class TestDomGraph( unittest.TestCase ):
 
 	def setUp( self ):
-		self.graph = graph.FileGraph( get_test_session() )
+		self.graph = FileGraph( get_test_session() )
 
 	def test_client_iter( self ):
 		self.assertEqual( len(list(self.graph.iter_clients())), 2 )

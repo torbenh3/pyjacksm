@@ -48,7 +48,7 @@ class PortName(str):
 class Port( object ):
     """the baseclass for a Port."""
 
-    def __init__( self, client, name, typ, flags ):
+    def __init__( self, client, name, typ = JACK_DEFAULT_MIDI_TYPE, flags = 0 ):
 	self.portname = PortName(name).get_shortname()
 	self.typ = typ
 	self.flags = flags
@@ -80,26 +80,6 @@ class Port( object ):
 	return (self.typ == JACK_DEFAULT_MIDI_TYPE)
 
 
-
-class LivePort( Port ):
-    """A live port which can be connected and such"""
-
-    def __init__( self, jserver, client, name ):
-	"""Create the port coresponding to name, which needs to be a valid jack port"""
-
-	self.port_p = jserver.port_by_name( name )
-	super(LivePort,self).__init__( client, name, self.port_p.type(), self.port_p.flags() )
-
-
-class DomPort( Port ):
-    """A Port which was loaded from a dom"""
-
-    def __init__( self, client, node ):
-	"""Create a Port from the Dom node..."""
-	super(DomPort,self).__init__( client, node.getAttribute("name"), JACK_DEFAULT_AUDIO_TYPE, 0 )
-
-	# put all connection names into named_connections
-	self.named_connections = [ i.getAttribute( "dst" ) for i in node.getElementsByTagName( "conn" ) ]
 
 
 class DummyPort( Port ):
@@ -141,31 +121,6 @@ class Client( object ):
 		return p
 	raise KeyError
 
-
-class LiveClient( Client ):
-    """a live client, from the jackgraph..."""
-
-    def __init__( self, jserver, name ):
-	"""Create the LiveClient, ports are added afterwards"""
-	super(LiveClient,self).__init__( name )
-	self.jserver = jserver
-	
-    def add_port( self, portname ):
-	"""adds a Port... """
-	self.ports.append( LivePort( self.jserver, self, portname ) )
-
-
-class DomClient( Client ):
-    """Client created from a DomNode"""
-
-    def __init__( self, node ):
-	"""Create DomClient from a DomNode..."""
-	super(DomClient,self).__init__( node.getAttribute( "jackname" ) )
-	self.uuid = node.getAttribute( "uuid" )
-	self.cmdline = node.getAttribute( "cmdline" )
-
-	for p in node.getElementsByTagName( "port" ):
-	    self.ports.append( DomPort( self, p ) )
 
 class DummyClient( Client ):
     def __init__( self, name ):
@@ -215,77 +170,6 @@ class Graph( object ):
 	    for dst in p.get_connections():
 		if not dst.client.hide:
 		    yield (p, dst)
-
-class LiveGraph(Graph):
-    """a live JackGraph"""
-
-    def __init__(self, jserver, ports):
-	"""Create a LiveGraph from a list of all ports
-	   jserver is the bpjack Client, and ports is a list of Strings or PortNames
-
-	   this constructor also scans all connections...
-	"""
-
-	super(LiveGraph, self).__init__()
-
-	self.jserver = jserver
-		
-        for p in map( PortName, ports ):
-	    try:
-		client = self.get_client( p.get_clientname() )
-	    except KeyError:
-		client = LiveClient( jserver, p.get_clientname() )
-		self.clients.append( client )
-
-	    client.add_port( p )
-
-	for port in self.iter_ports():
-	    for dst in port.port_p.get_all_connections():
-		port.conns.append( self.get_port( dst ) )
-
-
-class DomGraph( Graph ):
-    """A Graph from a dom"""
-
-    def __init__( self, domdoc ):
-	"""create graph from domdoc"""
-
-	super(DomGraph, self).__init__()
-
-	doc = domdoc.documentElement
-	for c in doc.getElementsByTagName( "jackclient" ):
-	    self.clients.append( DomClient( c ) )
-
-	for port in self.iter_ports():
-	    for dst in port.named_connections:
-		port.conns.append( self.ensure_port( dst ) )
-
-    def ensure_port( self, portname ):
-	pn = PortName( portname )
-
-	try:
-	    cl = self.get_client( pn.get_clientname() )
-	except KeyError:
-	    cl = DummyClient( pn.get_clientname() ) 
-	    self.clients.append( cl )
-
-	try:
-	    po = cl.get_port( pn.get_shortname() )
-	except KeyError:
-	    po = DummyPort( cl, pn, "", 0 )
-	    cl.ports.append( po )
-
-	return po
-
-	
-from xml.dom.minidom import getDOMImplementation, parse, Element
-
-class FileGraph( DomGraph ):
-    """A Graph built from an xml File"""
-
-    def __init__( self, filename ):
-    	dom = parse( filename )
-	super(FileGraph, self).__init__( dom )
 
 
 if __name__ == "__main__":
