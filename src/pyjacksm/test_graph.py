@@ -35,12 +35,16 @@ class TestDomGraph( unittest.TestCase ):
 		self.assertEqual( len(list(self.graph.iter_clients())), 2 )
 
 	def test_port_iter( self ):
-		self.assertEqual( len(list(self.graph.iter_ports())), 10 )
+		self.assertEqual( len(list(self.graph.iter_ports())), 4 )
+
+	def test_conn_iter( self ):
+		self.assertEqual( len(list(self.graph.iter_connections())), 3 )
 
 	def test_hide_client( self ):
 		self.graph.get_client( "a2j" ).hide = True
-		self.assertEqual( len(list(self.graph.iter_ports())), 6 )
+		self.assertEqual( len(list(self.graph.iter_ports())), 2 )
 		self.assertEqual( len(list(self.graph.iter_clients())), 1 )
+		self.assertEqual( len(list(self.graph.iter_connections())), 1 )
 
 if __name__ == '__main__':
 	unittest.main()

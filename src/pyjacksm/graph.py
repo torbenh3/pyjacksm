@@ -56,6 +56,7 @@ class Port( object ):
 
 	self.conns = []
 	self.named_connections = []
+	self.dummy = False
 
 
     def get_name( self ):
@@ -99,6 +100,15 @@ class DomPort( Port ):
 
 	# put all connection names into named_connections
 	self.named_connections = [ i.getAttribute( "dst" ) for i in node.getElementsByTagName( "conn" ) ]
+
+
+class DummyPort( Port ):
+    """A Port which was loaded from a dom"""
+
+    def __init__( self, client, name, typ=JACK_DEFAULT_AUDIO_TYPE, flags=0 ):
+	"""Create a Dummy Port"""
+	super(DummyPort,self).__init__( client, name, typ, flags )
+	self.dummy = True
 
 
 
@@ -191,7 +201,7 @@ class Graph( object ):
     def iter_clients( self ):
 	"""iterator over all valid clients"""
 	for c in self.clients:
-	    if not c.hide:
+	    if (not c.hide) and (not c.dummy):
 		yield c
 
     def iter_ports( self ):
@@ -256,13 +266,13 @@ class DomGraph( Graph ):
 	try:
 	    cl = self.get_client( pn.get_clientname() )
 	except KeyError:
-	    cl = Client( pn.get_clientname() ) 
+	    cl = DummyClient( pn.get_clientname() ) 
 	    self.clients.append( cl )
 
 	try:
 	    po = cl.get_port( pn.get_shortname() )
 	except KeyError:
-	    po = Port( cl, pn, "", 0 )
+	    po = DummyPort( cl, pn, "", 0 )
 	    cl.ports.append( po )
 
 	return po
