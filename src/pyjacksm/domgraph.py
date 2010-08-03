@@ -68,12 +68,62 @@ class DomGraph( Graph ):
 
 
 class FileGraph( DomGraph ):
-    """A Graph built from an xml File"""
+    """A Graph built from an xml File
+
+    >>> import test_graph
+    >>> g = FileGraph( test_graph.get_test_session() )
+    
+    """
 
     def __init__( self, filename ):
     	dom = parse( filename )
 	super(FileGraph, self).__init__( dom )
 
+
+def client_to_dom( client ):
+
+    cl_elem = Element( "jackclient" )
+    cl_elem.setAttribute( "cmdline", client.get_commandline() )
+    cl_elem.setAttribute( "jackname", client.name )
+    if client.uuid:
+	cl_elem.setAttribute( "uuid", client.uuid )
+    if client.isinfra:
+	cl_elem.setAttribute( "infra", "True" )
+    else:
+	cl_elem.setAttribute( "infra", "False" )
+
+    for p in client.ports:
+	po_elem = Element( "port" )
+	po_elem.setAttribute( "name", p.get_name() )
+	po_elem.setAttribute( "shortname", p.portname )
+	
+	for c in p.get_connections():
+	    c_elem = Element( "conn" )
+	    c_elem.setAttribute( "dst", c.get_name() )
+
+	    po_elem.appendChild( c_elem )
+
+	cl_elem.appendChild( po_elem )
+    
+    return cl_elem
+
+
+def graph_to_dom( graph ):
+    """Convert a graph to a DOM..
+
+	>>> import test_graph
+	>>> g = FileGraph( test_graph.get_test_session() )
+        >>> d = graph_to_dom( g )
+    """
+
+    impl = getDOMImplementation()
+    dom = impl.createDocument(None,"jacksession",None)
+
+    for c in graph.clients:
+	cl_elem = client_to_dom( c )
+	dom.documentElement.appendChild( cl_elem )
+
+    return dom
 
 
 
