@@ -1,5 +1,5 @@
 
-import bpjack
+from pyjacksm import bpjack
 from graph import Port, Client, Graph, PortName
 
 JACK_DEFAULT_AUDIO_TYPE="32 bit float mono audio"
