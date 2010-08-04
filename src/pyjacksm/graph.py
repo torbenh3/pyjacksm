@@ -97,6 +97,7 @@ class Client( object ):
 
     def __init__( self, name ):
 	self.name = name
+	self.orig_name = name
 	self.ports = []
 	self.commandline = None
 	self.isinfra = False
@@ -104,9 +105,10 @@ class Client( object ):
 	self.hide = False
 	self.dummy = False
 
-    def get_commandline( self ):
+    def get_commandline( self, session_dir ):
+	client_session_dir = session_dir + self.orig_name + "/"
 	if self.commandline:
-	    return self.commandline
+	    return cmdline.replace( "${SESSION_DIR}", client_session_dir )
 	else:
 	    return ""
 
@@ -140,6 +142,13 @@ class Graph( object ):
 		return i
 	raise KeyError
 
+    def has_client( self, name ):
+	"""return True if client is part of this graph"""
+	for i in self.clients:
+	    if i.name == name:
+		return True
+	return False
+
 
     def get_port( self, portname ):
 	pn = PortName( portname )
@@ -157,6 +166,18 @@ class Graph( object ):
 	"""iterator over all valid clients"""
 	for c in self.clients:
 	    if (not c.hide) and (not c.dummy):
+		yield c
+
+    def iter_normal_clients( self ):
+	"""iterate over normal clients"""
+	for c in self.iter_clients():
+	    if not c.isinfra:
+		yield c
+
+    def iter_infra_clients( self ):
+	"""iterate over infra clients"""
+	for c in self.iter_clients():
+	    if c.isinfra:
 		yield c
 
     def iter_ports( self ):
