@@ -99,9 +99,9 @@ class Client( object ):
 	self.name = name
 	self.orig_name = name
 	self.ports = []
-	self.commandline = None
+	self.commandline = ""
 	self.isinfra = False
-	self.uuid = None
+	self.uuid = ""
 	self.hide = False
 	self.dummy = False
 
