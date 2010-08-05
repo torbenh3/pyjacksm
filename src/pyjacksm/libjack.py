@@ -99,10 +99,21 @@ class JackClient(object):
         self.client.abort_monitor()
 
 
+    def do_reservation( self, cl ):
 
+	num = 0
+	while True:
+	    if self.client.reserve_client_name( str(cl.name), str(cl.uuid) ) == 0:
+		return
 
+	    num += 1
+	    cname_split = cl.name.split('-')
+	    if len(cname_split) == 1:
+		cname_prefix = cname_split[0]
+	    else:
+		cname_prefix = string.join( cname_split[:-1], '-' )
 
-	    
-	    
+	    cl.name = ("%s-%02d"%(cname_prefix,num))
 
+	    print "new name: ", cl.name
 

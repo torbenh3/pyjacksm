@@ -42,14 +42,13 @@ class Session (object):
         self.finished_cb = self.finished
 
 
-        #print sd.get_client_names()
-
         # rewrite names... so that there will be no conflicts.
 	# TODO: JackClient object needs a method to reserve a Client.
 	#       it will rename it, when the current name cant be reserved.
 
-	#for c in sd.iter_normal_clients():
-	#    self.cl.make_reservations( c )
+	for c in sd.iter_normal_clients():
+	    print c.name
+	    self.cl.do_reservation( c )
 
         # build up list of port connections
 	conns = list( sd.iter_connections() )
