@@ -1,6 +1,6 @@
 
 from libjack  import JackClient
-from domgraph import FileGraph
+from domgraph import FileGraph, graph_to_dom
 
 import monitors
 
@@ -96,6 +96,56 @@ class Session (object):
         
     def finished( self ):
         print "session loaded"
+
+
+def save_session( name, path, quit=False, template=False ): 
+
+    jserver = JackClient( "sessionmanager" )
+
+    # make sure dst directory exists...
+    #os.mkdir( self.sessiondir+name )
+
+    # snapshot the Graph
+    g = jserver.get_graph()
+
+    # now send the notifications...
+    if quit:
+	notify = jserver.session_save_and_quit( path+name+"/" )
+    elif template:
+	notify = jserver.session_save_template( path+name+"/" )
+    else:
+	notify = jserver.session_save( path+name+"/" )
+
+    # weave the notifications into the snapshot graph
+    for n in notify:
+	c = g.get_client( n.clientname )
+	c.commandline =  n.commandline
+	c.uuid = n.uuid
+
+    # special treatment for implicit and infra clients
+    for c in g.iter_clients():
+	if c.commandline == "":
+	    c.hide = True
+
+	    #if not c.name in self.infra_clients.keys()+self.implicit_clients:
+	    # 	c.hide = True
+	    #elif c.name in self.implicit_clients:
+	    #	c.dummy = True
+	    #else:
+	    #	c.isinfra = True
+	    #	c.commandline = self.infra_clients[c.name]
+
+    dom = graph_to_dom( g )
+
+
+    # f = file( path+name+"/session.xml", "w" )
+    # f.write( sd.get_xml() )
+    # f.close()
+
+    print dom.toprettyxml()
+    return 0
+
+
 
 if __name__ == "__main__":
     import doctest
