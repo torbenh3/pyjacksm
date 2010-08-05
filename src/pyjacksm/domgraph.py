@@ -119,7 +119,7 @@ def graph_to_dom( graph ):
     impl = getDOMImplementation()
     dom = impl.createDocument(None,"jacksession",None)
 
-    for c in graph.clients:
+    for c in graph.iter_clients():
 	cl_elem = client_to_dom( c )
 	dom.documentElement.appendChild( cl_elem )
 
