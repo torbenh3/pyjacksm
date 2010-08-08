@@ -1,6 +1,6 @@
 
 from libjack  import JackClient
-from domgraph import FileGraph, graph_to_dom
+from state import FileGraph, graph_to_dom
 
 import monitors
 

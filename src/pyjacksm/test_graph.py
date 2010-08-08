@@ -1,7 +1,7 @@
 
 from StringIO import StringIO
 
-from domgraph import FileGraph
+from state import FileGraph
 import unittest
 
 
