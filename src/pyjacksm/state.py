@@ -1,145 +1,133 @@
 
+""" Support for building a Graph from DOM and also
+    converting it back to Dom """
+
+from graph import Port, Client, Graph, PortName
+
+#these are not necassary:
+from graph import DummyPort, DummyClient
+
 from xml.dom.minidom import getDOMImplementation, parse, Element
-import string
 
-impl = getDOMImplementation()
+class DomPort( Port ):
+    """A Port which was loaded from a dom"""
 
-class SessionDom( object ):
-    def __init__( self, filename=None ):
-	if filename:
-	    self.dom = parse( filename )
+    def __init__( self, client, node ):
+	"""Create a Port from the Dom node..."""
+	super(DomPort,self).__init__( client, node.getAttribute("name") )
 
-	    doc = self.dom.documentElement
-	    for c in doc.getElementsByTagName( "jackclient" ):
-		c.orig_name = c.getAttribute( "jackname" )
-	else:
-	    self.dom = impl.createDocument(None,"jacksession",None)
+	# put all connection names into named_connections
+	self.named_connections = [ i.getAttribute( "dst" ) for i in node.getElementsByTagName( "conn" ) ]
 
+
+class DomClient( Client ):
+    """Client created from a DomNode"""
+
+    def __init__( self, node ):
+	"""Create DomClient from a DomNode..."""
+	super(DomClient,self).__init__( node.getAttribute( "jackname" ) )
+	self.uuid = node.getAttribute( "uuid" )
+	self.cmdline = node.getAttribute( "cmdline" )
+
+	for p in node.getElementsByTagName( "port" ):
+	    self.ports.append( DomPort( self, p ) )
+
+
+class DomGraph( Graph ):
+    """A Graph from a dom"""
+
+    def __init__( self, domdoc ):
+	"""create graph from domdoc"""
+
+	super(DomGraph, self).__init__()
+
+	doc = domdoc.documentElement
+	for c in doc.getElementsByTagName( "jackclient" ):
+	    self.clients.append( DomClient( c ) )
+
+	for port in self.iter_ports():
+	    for dst in port.named_connections:
+		port.conns.append( self.ensure_port( dst ) )
+
+    def ensure_port( self, portname ):
+	pn = PortName( portname )
+
+	try:
+	    cl = self.get_client( pn.get_clientname() )
+	except KeyError:
+	    cl = DummyClient( pn.get_clientname() ) 
+	    self.clients.append( cl )
+
+	try:
+	    po = cl.get_port( pn.get_shortname() )
+	except KeyError:
+	    po = DummyPort( cl, pn, "", 0 )
+	    cl.ports.append( po )
+
+	return po
+
+
+class FileGraph( DomGraph ):
+    """A Graph built from an xml File
+
+    >>> import test_graph
+    >>> g = FileGraph( test_graph.get_test_session() )
     
-    def add_client( self, client ):
-	cl_elem = Element( "jackclient" )
-	cl_elem.setAttribute( "cmdline", client.get_commandline() )
-	cl_elem.setAttribute( "jackname", client.name )
-	if client.get_uuid():
-	    cl_elem.setAttribute( "uuid", client.get_uuid() )
-	if client.isinfra:
-	    cl_elem.setAttribute( "infra", "True" )
-	else:
-	    cl_elem.setAttribute( "infra", "False" )
+    """
 
-	for p in client.ports:
-	    po_elem = Element( "port" )
-	    po_elem.setAttribute( "name", p.name )
-	    po_elem.setAttribute( "shortname", p.portname )
-	    
-	    for c in p.get_connections():
-		c_elem = Element( "conn" )
-		c_elem.setAttribute( "dst", c )
+    def __init__( self, filename ):
+    	dom = parse( filename )
+	super(FileGraph, self).__init__( dom )
 
-		po_elem.appendChild( c_elem )
 
-	    cl_elem.appendChild( po_elem )
+def client_to_dom( client ):
+
+    cl_elem = Element( "jackclient" )
+    cl_elem.setAttribute( "cmdline", client.commandline )
+    cl_elem.setAttribute( "jackname", client.name )
+    if client.uuid:
+	cl_elem.setAttribute( "uuid", client.uuid )
+    if client.isinfra:
+	cl_elem.setAttribute( "infra", "True" )
+    else:
+	cl_elem.setAttribute( "infra", "False" )
+
+    for p in client.ports:
+	po_elem = Element( "port" )
+	po_elem.setAttribute( "name", p.get_name() )
+	po_elem.setAttribute( "shortname", p.portname )
 	
-	self.dom.documentElement.appendChild( cl_elem )
+	for c in p.get_connections():
+	    c_elem = Element( "conn" )
+	    c_elem.setAttribute( "dst", c.get_name() )
 
-    def get_xml(self):
-	return self.dom.toprettyxml()
+	    po_elem.appendChild( c_elem )
 
-    def get_client_names(self):
-	retval = []
-	doc = self.dom.documentElement
-	for c in doc.getElementsByTagName( "jackclient" ):
-	    retval.append( c.getAttribute( "jackname" ) )
-
-	return retval
-
-    def get_reg_client_names(self):
-	retval = []
-	doc = self.dom.documentElement
-	for c in doc.getElementsByTagName( "jackclient" ):
-	    if c.getAttribute( "infra" ) != "True":
-		retval.append( c.getAttribute( "jackname" ) )
-
-	return retval
-
-    def get_infra_clients(self):
-	retval = []
-	doc = self.dom.documentElement
-	for c in doc.getElementsByTagName( "jackclient" ):
-	    if c.getAttribute( "infra" ) == "True":
-		retval.append( (c.getAttribute( "jackname" ), c.getAttribute( "cmdline" ) ) )
-
-	return retval
-    def get_port_names(self):
-	retval = []
-	doc = self.dom.documentElement
-	for c in doc.getElementsByTagName( "port" ):
-	    retval.append( c.getAttribute( "name" ) )
-	return retval
-
-    def get_connections_for_port( self, portname ):
-	retval = []
-	doc = self.dom.documentElement
-	for c in doc.getElementsByTagName( "port" ):
-	    if c.getAttribute( "name" ) == portname:
-		for i in c.getElementsByTagName( "conn" ):
-		    retval.append( i.getAttribute( "dst" ) )
-	return retval
-
-    def get_commandline_for_client( self, name, session_dir ):
-	doc = self.dom.documentElement
-	for c in doc.getElementsByTagName( "jackclient" ):
-	    if c.getAttribute( "jackname" ) == name:
-		client_session_dir = session_dir + c.orig_name + "/"
-		cmdline = c.getAttribute( "cmdline" )
-
-		return cmdline.replace( "${SESSION_DIR}", client_session_dir )
-
-    def get_uuid_client_pairs( self ):
-	retval = []
-	doc = self.dom.documentElement
-	for c in doc.getElementsByTagName( "jackclient" ):
-	    if c.getAttribute( "infra" ) != "True":
-                if len(c.getElementsByTagName( "port" )):
-                    retval.append( (c.getAttribute( "uuid" ), c.getAttribute( "jackname" )) )
-
-	return retval
-
-    def renameclient( self, celem, newname ):
-	doc = self.dom.documentElement
-	celem.setAttribute( "jackname", newname )
-	for pelem in celem.getElementsByTagName( "port" ):
-	    old_pname = pelem.getAttribute( "name" )
-	    pname_split = old_pname.split(":")
-	    pname_split[0] = newname
-	    new_pname = string.join( pname_split, ":" )
-	    pelem.setAttribute( "name", new_pname )
-	    for dst in doc.getElementsByTagName( "conn" ):
-		if dst.getAttribute( "dst" ) == old_pname:
-		    dst.setAttribute( "dst", new_pname )
+	cl_elem.appendChild( po_elem )
+    
+    return cl_elem
 
 
-	    
-    def fixup_client_names( self, graph ):
-	doc = self.dom.documentElement
-	for c in doc.getElementsByTagName( "jackclient" ):
-	    if c.getAttribute( "infra" ) == "True":
-		continue
-	    cname = c.getAttribute( "jackname" )
-	    if cname in graph.get_taken_names():
-		free_name = graph.get_free_name( cname, self.get_reg_client_names() )
-		print "name taken %s.. reallocate to %s"%(cname, free_name )
-		self.renameclient( c, free_name )
-		
+def graph_to_dom( graph ):
+    """Convert a graph to a DOM..
 
-	
+	>>> import test_graph
+	>>> g = FileGraph( test_graph.get_test_session() )
+        >>> d = graph_to_dom( g )
+    """
 
-	
+    impl = getDOMImplementation()
+    dom = impl.createDocument(None,"jacksession",None)
+
+    for c in graph.iter_clients():
+	cl_elem = client_to_dom( c )
+	dom.documentElement.appendChild( cl_elem )
+
+    return dom
 
 
 
-
-
-
-
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
 
