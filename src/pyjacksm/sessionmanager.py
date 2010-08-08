@@ -2,6 +2,9 @@
 from pyjacksm import libjack
 from pyjacksm import state
 from pyjacksm import monitors
+
+from pyjacksm.session import Session
+
 import subprocess
 from ConfigParser import SafeConfigParser
 import os
@@ -11,88 +14,6 @@ import string
 
 defaults = { "jackclientname": "sessionmanager", "sessiondir": "~/jackSessions", "templatedir": "~/.jackSession_templates" }
 
-
-class Session (object):
-    def __init__( self, sessiondir, name ):
-        self.sessiondir = sessiondir
-        self.name = name
-
-        self.cl = libjack.JackClient( "sessionmanager", True )
-
-        sd = state.SessionDom( sessiondir+"/session.xml" )
-
-        g=self.cl.get_graph()
-
-        self.procmons = {}
-
-        avail_ports = g.get_port_list()
-
-        for ic in sd.get_infra_clients():
-            if not ic[0] in g.clients.keys():
-                self.procmons[ic[0]] = monitors.ProcMon( ic[1] )
-
-        self.progress_cb = self.progress
-        self.finished_cb = self.finished
-
-
-        print sd.get_client_names()
-
-        # rewrite names... so that there will be no conflicts.
-	sd.fixup_client_names( g )
-
-	# now we have mangled all the names, lets reserve them.
-	for (uuid, clientname) in sd.get_uuid_client_pairs():
-	    print "reserving name %s"%clientname
-	    g.reserve_name( uuid, clientname )
-
-        # build up list of port connections
-        conns = []
-        for p in sd.get_port_names():
-            for c in sd.get_connections_for_port( p ):
-                conns.append( (p,c) )
-        print conns
-
-        # create procmons for the clients
-        for cname in sd.get_reg_client_names():
-            cmd = sd.get_commandline_for_client( cname, self.sessiondir + "/" )
-            self.procmons[cname] = monitors.ProcMon( cmd )
-
-        self.connmon = monitors.ConnMon( conns, self.cl, self.do_progress_cb, self.do_finished_cb )
-
-    def start_load (self):
-        print "start connmon"
-        self.connmon.start()
-        
-        print "start procmons"
-        for i in self.procmons.values():
-            i.start()
-        print "got em"
-
-
-    def get_clients (self):
-        return self.procmons.keys()
-
-    def get_client_log (self, client):
-        log = self.procmons[client].log
-        return string.join( log, '\n' )
-
-    def abort_load (self):
-        self.connmon.abort_monitoring()
-
-    def do_progress_cb (self, num, of):
-        print "do_progess %d / %d" % (num, of)
-        self.progress_cb( num, of )
-        print "done"
-        
-    def do_finished_cb( self ):
-        self.finished_cb()
-
-    # defaults..
-    def progress (self, num, of):
-        print "progress %d / %d " % (num, of)
-        
-    def finished( self ):
-        print "session loaded"
 
 
 class SessionManager( object ):
