@@ -15,17 +15,17 @@ class Session (object):
        So a session is basically a set of reservations, initialised procmons,
        and the connmon.
 
-       >>> s = Session( "/home/torbenh/jackSessions/jr01", "bls" ) 
+       >>> import storage
+       >>> store = storage.Store( "/home/torbenh/jackSessions", "jr01" )
+       >>> s = Session( store ) 
        
     """
 
-    def __init__( self, sessiondir, name ):
-        self.sessiondir = sessiondir
-        self.name = name
+    def __init__( self, store ):
 
         self.cl = JackClient( "sessionmanager" )
 
-        sd = FileGraph( sessiondir+"/session.xml" )
+        sd = FileGraph( store.session_xml )
 
         g=self.cl.get_graph()
 
@@ -57,7 +57,7 @@ class Session (object):
 
         # create procmons for the clients
         for c in sd.iter_normal_clients():
-            cmd = c.get_commandline( self.sessiondir + "/" )
+            cmd = c.get_commandline( store.path )
             self.procmons[c.name] = monitors.ProcMon( cmd )
 
         self.connmon = monitors.ConnMon( conns, self.cl, self.do_progress_cb, self.do_finished_cb )
@@ -98,23 +98,20 @@ class Session (object):
         print "session loaded"
 
 
-def save_session( name, path, quit=False, template=False ): 
+def save_session( store, quit=False, template=False ): 
 
     jserver = JackClient( "sessionmanager" )
-
-    # make sure dst directory exists...
-    #os.mkdir( self.sessiondir+name )
 
     # snapshot the Graph
     g = jserver.get_graph()
 
     # now send the notifications...
     if quit:
-	notify = jserver.session_save_and_quit( path+name+"/" )
+	notify = jserver.session_save_and_quit( store.path )
     elif template:
-	notify = jserver.session_save_template( path+name+"/" )
+	notify = jserver.session_save_template( store.path )
     else:
-	notify = jserver.session_save( path+name+"/" )
+	notify = jserver.session_save( store.path )
 
     # weave the notifications into the snapshot graph
     for n in notify:
@@ -138,9 +135,10 @@ def save_session( name, path, quit=False, template=False ):
     dom = graph_to_dom( g )
 
 
-    # f = file( path+name+"/session.xml", "w" )
+    # f = file( store.session_xml, "w" )
     # f.write( dom.toprettyxml() )
     # f.close()
+    # store.commit()
 
     print dom.toprettyxml()
     return 0
