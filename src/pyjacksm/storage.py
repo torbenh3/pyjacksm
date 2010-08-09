@@ -1,4 +1,6 @@
 
+""" This module contains a Basic Storage on Filesystem implementation"""
+
 import os
 import shutil
 
@@ -47,24 +49,17 @@ class OverwriteStore( Store ):
 
 
 
-
-
 class Storage( object ):
     """This class represents the storage backend, that holds the sessions"""
 
-    def __init__( self, config ):
+    def __init__( self, sdir ):
 	"""constructor, and feed it with a config"""
 
-	self.sessiondir  = config.sessiondir
-	self.templatedir = config.templatedir
+	self.sessiondir  = sdir
 
         if not os.path.exists( self.sessiondir ):
             print "Sessiondir %s does not exist. Creating it..."%self.sessiondir
             os.mkdir( self.sessiondir )
-
-        if not os.path.exists( self.templatedir ):
-            print "Templatedir %s does not exist. Creating it..."%self.templatedir
-            os.mkdir( self.templatedir )
 
     def list_projects( self ):
 	"""return a list of str with all known projects"""
@@ -73,35 +68,23 @@ class Storage( object ):
         files = filter( lambda x: os.path.isdir( os.path.join( self.sessiondir, x ) ), files )
         return files
 
-    def list_templates( self ):
-	"""return a list of str with all known templates"""
-
-        files = os.listdir( self.templatedir )
-        files = filter( lambda x: os.path.isdir( os.path.join( self.templatedir, x ) ), files )
-        return files
-
-
     def open( self, name ):
 	"""return an open session Store"""
+
+	if not self.session_exists( name ):
+            print "Session %s does not exist"%name
+            return None
 	return Store( self.sessiondir, name )
 
     def open_overwrite( self, name ):
 	"""returns a Store which overwrites name"""
+
+	if not self.session_exists( name ):
+            print "Session %s does not exist"%name
+            return None
 	return OverwriteStore( self.sessiondir, name )
 
 
     def session_exists( self, name ):
 	return os.path.exists( self.sessiondir+name+"/session.xml" )
-
-    def load_session( self, name, template=False ):
-        if template:
-            path = self.templatedir
-        else:
-            path = self.sessiondir
-
-        if not os.path.exists( path+name+"/session.xml" ):
-            print "Session %s does not exist"%name
-            return None
-
-        return Session( path+name, name )
 
