@@ -139,7 +139,7 @@ def save_session( name, path, quit=False, template=False ):
 
 
     # f = file( path+name+"/session.xml", "w" )
-    # f.write( sd.get_xml() )
+    # f.write( dom.toprettyxml() )
     # f.close()
 
     print dom.toprettyxml()
