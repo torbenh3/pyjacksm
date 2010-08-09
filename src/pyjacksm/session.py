@@ -60,7 +60,7 @@ class Session (object):
 
         # create procmons for the clients
         for c in sd.iter_normal_clients():
-            cmd = c.get_commandline( store.path )
+            cmd = c.get_commandline( store )
             self.procmons[c.name] = monitors.ProcMon( cmd )
 
         self.connmon = monitors.ConnMon( conns, self.cl, self.do_progress_cb, self.do_finished_cb )

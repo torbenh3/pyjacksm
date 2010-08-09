@@ -1,4 +1,6 @@
 
+import os
+
 JACK_DEFAULT_AUDIO_TYPE="32 bit float mono audio"
 JACK_DEFAULT_MIDI_TYPE="8 bit raw midi"
 
@@ -99,16 +101,16 @@ class Client( object ):
 	self.name = name
 	self.orig_name = name
 	self.ports = []
-	self.commandline = ""
+	self.cmdline = ""
 	self.isinfra = False
 	self.uuid = ""
 	self.hide = False
 	self.dummy = False
 
-    def get_commandline( self, session_dir ):
-	client_session_dir = session_dir + self.orig_name + "/"
-	if self.commandline:
-	    return cmdline.replace( "${SESSION_DIR}", client_session_dir )
+    def get_commandline( self, store ):
+	client_session_dir = os.path.join( store.path, self.orig_name ) + "/"
+	if self.cmdline:
+	    return self.cmdline.replace( "${SESSION_DIR}", client_session_dir )
 	else:
 	    return ""
 
