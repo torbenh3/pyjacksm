@@ -27,6 +27,17 @@ class Store( object ):
     def commit( self ):
 	pass
 
+class NewStore( Store ):
+    """This creates a new session Store"""
+
+    def __init__( self, sdir, name ):
+	"""create the store name,
+	   TODO: check for overwrite"""
+
+	super(NewStore,self).__init__( sdir, name )
+	os.mkdir( self.path )
+
+
 
 class OverwriteStore( Store ):
     """this store is for overwriting an old store.
@@ -76,6 +87,16 @@ class Storage( object ):
             return None
 	return Store( self.sessiondir, name )
 
+    def open_new( self, name ):
+	"""return an open session Store"""
+
+	if self.session_exists( name ):
+            print "Session %s already exists"%name
+            return None
+
+	return NewStore( self.sessiondir, name )
+
+    
     def open_overwrite( self, name ):
 	"""returns a Store which overwrites name"""
 
