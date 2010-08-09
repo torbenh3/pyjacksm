@@ -3,6 +3,7 @@ from libjack  import JackClient
 from state import FileGraph, graph_to_dom
 
 import monitors
+import string
 
 class Session (object):
     """Object representing a Session.
@@ -22,6 +23,8 @@ class Session (object):
     """
 
     def __init__( self, store ):
+
+	self.name = store.name
 
         self.cl = JackClient( "sessionmanager" )
 
