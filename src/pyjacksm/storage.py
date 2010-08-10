@@ -39,7 +39,7 @@ class NewStore( Store ):
 
 
 
-class OverwriteStore( Store ):
+class OverwriteStore( NewStore ):
     """this store is for overwriting an old store.
        the new data is written to a tmp location, 
        and the old stuff is only deleted upon commit"""
@@ -100,7 +100,11 @@ class Storage( object ):
     def open_overwrite( self, name ):
 	"""returns a Store which overwrites name"""
 
-	if not self.session_exists( name ):
+	# XXX: oldschool... but we can be a bit more lax on checking
+	#      whether a session is valid for overwrite.
+	#if not self.session_exists( name ):
+
+	if not os.path.isdir( os.path.join( self.sessiondir, name ) ):
             print "Session %s does not exist"%name
             return None
 	return OverwriteStore( self.sessiondir, name )
