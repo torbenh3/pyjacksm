@@ -11,7 +11,7 @@ class ProcMon (Thread):
         self.log = []
 
     def run (self):
-        self.p = Popen( self.command, bufsize=1, stdout=PIPE, shell=True, close_fds=True )
+        self.p = Popen( self.command, bufsize=1, stdout=PIPE, stderr=STDOUT, shell=True, close_fds=True )
 
         while(True):
             line = self.p.stdout.readline()
