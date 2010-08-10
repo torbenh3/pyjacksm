@@ -28,6 +28,8 @@ class DomClient( Client ):
 	super(DomClient,self).__init__( node.getAttribute( "jackname" ) )
 	self.uuid = node.getAttribute( "uuid" )
 	self.cmdline = node.getAttribute( "cmdline" )
+	if node.getAttribute( "infra" ) == "True":
+	    self.isinfra = True
 
 	for p in node.getElementsByTagName( "port" ):
 	    self.ports.append( DomPort( self, p ) )
