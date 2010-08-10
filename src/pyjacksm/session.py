@@ -1,6 +1,7 @@
 
 from libjack  import JackClient
 from state import FileGraph, graph_to_dom
+from pyjacksm.config  import Config
 
 import monitors
 import string
@@ -46,9 +47,6 @@ class Session (object):
 
 
         # rewrite names... so that there will be no conflicts.
-	# TODO: JackClient object needs a method to reserve a Client.
-	#       it will rename it, when the current name cant be reserved.
-
 	for c in sd.iter_normal_clients():
 	    print c.name
 	    self.cl.do_reservation( c )
@@ -101,7 +99,7 @@ class Session (object):
         print "session loaded"
 
 
-def save_session( store, quit=False, template=False ): 
+def save_session( store, quit=False, template=False, cfg=Config() ): 
 
     jserver = JackClient( "sessionmanager" )
 
@@ -124,26 +122,23 @@ def save_session( store, quit=False, template=False ):
 
     # special treatment for implicit and infra clients
     for c in g.iter_clients():
-	if c.commandline == "":
-	    c.hide = True
-
-	    #if not c.name in self.infra_clients.keys()+self.implicit_clients:
-	    # 	c.hide = True
-	    #elif c.name in self.implicit_clients:
-	    #	c.dummy = True
-	    #else:
-	    #	c.isinfra = True
-	    #	c.commandline = self.infra_clients[c.name]
+	if c.cmdline == "":
+	    if not c.name in cfg.infra_clients.keys()+cfg.implicit_clients:
+	     	c.hide = True
+	    elif c.name in cfg.implicit_clients:
+	    	c.dummy = True
+	    else:
+	    	c.isinfra = True
+	    	c.cmdline = cfg.infra_clients[c.name]
 
     dom = graph_to_dom( g )
 
 
-    # f = file( store.session_xml, "w" )
-    # f.write( dom.toprettyxml() )
-    # f.close()
-    # store.commit()
+    f = file( store.session_xml, "w" )
+    f.write( dom.toprettyxml() )
+    f.close()
+    store.commit()
 
-    print dom.toprettyxml()
     return 0
 
 
