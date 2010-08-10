@@ -83,7 +83,7 @@ class FileGraph( DomGraph ):
 def client_to_dom( client ):
 
     cl_elem = Element( "jackclient" )
-    cl_elem.setAttribute( "cmdline", client.commandline )
+    cl_elem.setAttribute( "cmdline", client.cmdline )
     cl_elem.setAttribute( "jackname", client.name )
     if client.uuid:
 	cl_elem.setAttribute( "uuid", client.uuid )

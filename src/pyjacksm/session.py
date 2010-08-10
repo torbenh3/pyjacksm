@@ -54,7 +54,7 @@ class Session (object):
 	    self.cl.do_reservation( c )
 
         # build up list of port connections
-	conns = list( sd.iter_connections() )
+	conns = [ (c[0].get_name(), c[1].get_name()) for c in sd.iter_connections() ]
 
         print conns
 
@@ -119,7 +119,7 @@ def save_session( store, quit=False, template=False ):
     # weave the notifications into the snapshot graph
     for n in notify:
 	c = g.get_client( n.clientname )
-	c.commandline =  n.commandline
+	c.cmdline =  n.commandline
 	c.uuid = n.uuid
 
     # special treatment for implicit and infra clients

@@ -161,7 +161,7 @@ class Graph( object ):
 	retval = []
 	for c in self.clients:
 	    for p in c.ports:
-		retval.append( p.portname )
+		retval.append( p.get_name() )
 	return retval
 
     def iter_clients( self ):
