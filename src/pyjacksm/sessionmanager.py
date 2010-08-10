@@ -40,28 +40,32 @@ class SessionManager( object ):
 	store = storage.open( name )
         return Session( store )
 
-    def quit_session( self, name ):
-	return self.save_session( name, True )
-
-    def save_template( self, name ):
-        return self.save_session( name, False, True )
-
-    def save_session( self, name, quit=False, template=False ): 
+    def get_storage( self, template=False ):
         if template:
-	    storage = self.template_storage
+	    return self.template_storage
         else:
-            storage = self.session_storage
+            return self.session_storage
 
-        if storage.session_exists( name ):
-            print "session %s already exists"%name
-            return -1
-
-	save_session( storage.open( name ), quit, template )
+    def update_current( self, name, quit, template ):
 	if quit:
 	    self.current_session = None
 	elif not template:
 	    self.current_session = name
 
-        return 0
+
+    def save_as( self, name, quit=False, template=False ):
+	sto = self.get_storage( template )
+	save_session( sto.open_new( name ), quit, template )
+	self.update_current( name, quit, template )
+
+
+    def save_over( self, name, quit=False ):
+	sto = self.get_storage()
+	save_session( sto.open_overwrite( name ), quit )
+	self.update_current( name, quit, template=False )
+
+    def save( self, quit=False ):
+	sto = self.get_storage()
+	save_session( sto.open_overwrite( self.current_session ), quit )
 
 
