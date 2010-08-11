@@ -2,6 +2,8 @@
 from pyjacksm import bpjack
 from graph import Port, Client, Graph, PortName
 
+import string
+
 JACK_DEFAULT_AUDIO_TYPE="32 bit float mono audio"
 JACK_DEFAULT_MIDI_TYPE="8 bit raw midi"
 
