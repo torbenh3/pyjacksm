@@ -1,5 +1,8 @@
 
-import bpjack
+from pyjacksm import bpjack
+from graph import Port, Client, Graph, PortName
+
+import string
 
 JACK_DEFAULT_AUDIO_TYPE="32 bit float mono audio"
 JACK_DEFAULT_MIDI_TYPE="8 bit raw midi"
@@ -14,157 +17,66 @@ JackSessionSave = 1
 JackSessionQuit = 2
 
 
+class LivePort( Port ):
+    """A live port which can be connected and such"""
 
-class Port( object ):
-    def __init__( self, client, name ):
-	self.client = client
-	self.name = name
-	self.portname = name.split(':')[1]
-	self.port_p = client.port_by_name( name )
-	self.conns = []
-        for p in self.port_p.get_all_connections():
-            self.conns.append( p )
+    def __init__( self, jserver, client, name ):
+	"""Create the port coresponding to name, which needs to be a valid jack port"""
 
-    def get_connections( self ):
-	return self.conns
-
-    def connect( self, other ):
-	self.client.connect( self.name, other )
-
-    def disconnect( self, other ):
-	self.client.disconnect( self.name, other )
-
-    def is_input( self ):
-	return (self.port_p.flags() & JackPortIsInput) != 0
-
-    def is_output( self ):
-	return (self.port_p.flags() & JackPortIsOutput) != 0
-
-    def is_audio( self ):
-	return (self.port_p.type() == JACK_DEFAULT_AUDIO_TYPE)
-
-    def is_midi( self ):
-	return (self.port_p.type() == JACK_DEFAULT_MIDI_TYPE)
+	self.port_p = jserver.port_by_name( name )
+	super(LivePort,self).__init__( client, name, self.port_p.type(), self.port_p.flags() )
 
 
-class Client( object ):
-    def __init__( self, client, name ):
-	self.client = client
-	self.name = name
-	self.ports = []
-	self.commandline = None
-	self.isinfra = False
-	self.uuid = None
+class LiveClient( Client ):
+    """a live client, from the jackgraph..."""
 
-    def get_commandline( self ):
-	if self.commandline:
-	    return self.commandline
-	else:
-	    return ""
-
-    def set_commandline( self, cmdline ):
-	self.commandline = cmdline
-
-    def get_uuid( self ):
-	return self.uuid
-
-    def set_uuid( self, uuid ):
-	self.uuid = uuid
-
+    def __init__( self, jserver, name ):
+	"""Create the LiveClient, ports are added afterwards"""
+	super(LiveClient,self).__init__( name )
+	self.jserver = jserver
+	
     def add_port( self, portname ):
-	self.ports.append( Port( self.client, portname ) )
-
-    def set_infra( self, cmdline ):
-	self.isinfra = True
-	self.commandline = cmdline
+	"""adds a Port... """
+	self.ports.append( LivePort( self.jserver, self, portname ) )
 
 
+class LiveGraph(Graph):
+    """a live JackGraph"""
 
-class JackGraph( object ):
-    def __init__( self, client, ports, uuids=[] ):
-	self.client = client
-	self.clients = {}
-	self.reserved_names = []
+    def __init__(self, jserver, ports):
+	"""Create a LiveGraph from a list of all ports
+	   jserver is the bpjack Client, and ports is a list of Strings or PortNames
 
-        for p in ports:
-	    port_split = p.split(':')
-	    if not self.clients.has_key(port_split[0]):
-		self.clients[port_split[0]] = Client( client, port_split[0] )
+	   this constructor also scans all connections...
+	"""
 
-	    self.clients[port_split[0]].add_port( p )
+	super(LiveGraph, self).__init__()
 
-    def get_client( self, name ):
-        if not self.clients.has_key(name):
-            self.clients[name] = Client( self.client, name )
-        return self.clients[name]
+	self.jserver = jserver
+		
+        for p in map( PortName, ports ):
+	    try:
+		client = self.get_client( p.get_clientname() )
+	    except KeyError:
+		client = LiveClient( jserver, p.get_clientname() )
+		self.clients.append( client )
 
-    def get_port_list( self ):
-	retval = []
-	for c in self.clients.values():
-	    for p in c.ports:
-		retval.append( p.name )
-	return retval
+	    client.add_port( p )
 
-
-
-    def check_client_name( self, client ):
-	if not client.name in self.reserved_names:
-	    return
-
-	oldname = client.name
-	newname = self.get_free_name( client.name )
-
-	client.rename( newname )
-	del self.clients[oldname]
-	self.clients[newname] = client
-
-    def get_free_name( self, oldname, other_names=[] ):
-	cname_split = oldname.split('-')
-	if len(cname_split) == 1:
-	    cname_prefix = cname_split[0]
-	else:
-	    cname_prefix = string.join( cname_split[:-1], '-' )
-
-	num = 1
-	while ("%s-%d"%(cname_prefix,num)) in (self.clients.keys()+self.reserved_names+other_names):
-		num+=1
-
-	return ("%s-%d"%(cname_prefix,num))
+	for port in self.iter_ports():
+	    for dst in port.port_p.get_all_connections():
+		port.conns.append( self.get_port( dst ) )
 
 
-
-    def remove_client( self, name ):
-	del self.clients[name]
-	for c in self.clients.values():
-	    for p in c.ports:
-		for conn in p.get_connections():
-		    if conn.startswith(name+":"):
-			p.conns.remove( conn )
-
-    def remove_client_only( self, name ):
-	del self.clients[name]
-
-    def ensure_clientnames( self, names ):
-	self.reserved_names = names
-	for c in self.clients.values():
-	    self.check_client_name( c )
-
-    def get_taken_names( self ):
-	return self.clients.keys() + self.reserved_names
-
-    def reserve_name( self, uuid, name ):
-	if self.client.reserve_client_name( str(name), str(uuid) ):
-	    raise Exception( "reservation failure" )
-	self.reserved_names.append( name )
 
 
 class JackClient(object):
-    def __init__( self, name, monitor ):
+    def __init__( self, name ):
 	self.client = bpjack.create_client( name )
 
     def get_graph( self ):
 	ports = self.client.get_ports( )
-	retval = JackGraph( self.client, ports )
+	retval = LiveGraph( self.client, ports )
 	return retval
 
 
@@ -189,10 +101,21 @@ class JackClient(object):
         self.client.abort_monitor()
 
 
+    def do_reservation( self, cl ):
 
+	num = 0
+	while True:
+	    if self.client.reserve_client_name( str(cl.name), str(cl.uuid) ) == 0:
+		return
 
+	    num += 1
+	    cname_split = cl.name.split('-')
+	    if len(cname_split) == 1:
+		cname_prefix = cname_split[0]
+	    else:
+		cname_prefix = string.join( cname_split[:-1], '-' )
 
-	    
-	    
+	    cl.name = ("%s-%02d"%(cname_prefix,num))
 
+	    print "new name: ", cl.name
 

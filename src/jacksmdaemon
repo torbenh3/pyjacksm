@@ -19,52 +19,32 @@ class DbusSM( dbus.service.Object ):
                 "/org/jackaudio/sessionmanager",
                 dbus.service.BusName( "org.jackaudio.sessionmanager", bus=dbus.SessionBus() ) )
 
-    @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="s", out_signature="i" )
+    @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="s", out_signature="" )
     def save_as( self, name ):
-        self.sm.current_session = name
-        return self.sm.save_session( name )
+        self.sm.save_as( name )
 
-    @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="s", out_signature="i" )
+    @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="s", out_signature="" )
     def save_template( self, name ):
-        return self.sm.save_template( name )
+        self.sm.save_as( name, quit=False, template=True )
 
-    @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="s", out_signature="i" )
+    @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="s", out_signature="" )
     def save_over( self, name ):
-        self.sm.move_session( name, "jacksm-tmp-save" )
-        self.sm.current_session = name
-        return self.sm.save_session( name )
+	self.sm.save_over( name )
 
-    @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="", out_signature="i" )
+
+    @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="", out_signature="" )
     def save( self ):
-        if not self.sm.current_session:
-            return -1
+	self.sm.save()
 
-        self.sm.move_session( self.sm.current_session, "jacksm-tmp-save" )
-        retval = self.sm.save_session( self.sm.current_session )
-        if retval:
-            return retval
 
-        self.sm.rm_session( "jacksm-tmp-save" )
-        return retval
-
-    @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="", out_signature="i" )
+    @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="", out_signature="" )
     def quit( self ):
-        if not self.sm.current_session:
-            return -1
+	self.sm.save( quit=True )
 
-        self.sm.move_session( self.sm.current_session, "jacksm-tmp-save" )
-        retval = self.sm.quit_session( self.sm.current_session )
-        if retval:
-            return retval
 
-        self.sm.current_session = None
-        self.sm.rm_session( "jacksm-tmp-save" )
-        return retval
-
-    @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="s", out_signature="i" )
+    @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="s", out_signature="" )
     def quit_as( self, name ):
-        self.sm.current_session = None
-        return self.sm.quit_session( name )
+	self.sm.save_as( name, quit=True )
 
     @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="s", out_signature="o" )
     def load( self, name ):
@@ -87,9 +67,17 @@ class DbusSM( dbus.service.Object ):
     def get_sessions( self ):
         return self.sessions
 
-    @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="s", out_signature="i" )
+    @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="s", out_signature="o" )
     def load_template( self, name ):
-        return self.sm.load_session( name, True )
+        s = self.sm.load_session( name )
+
+	self.sm.current_session = None
+
+        self.session_id += 1
+        dbs = DbusSession( s, self.session_id )
+        self.sessions.append( dbs )
+
+        return dbs
 
     @dbus.service.method( dbus_interface="org.jackaudio.sessionmanager", in_signature="", out_signature="as" )
     def list( self ):
