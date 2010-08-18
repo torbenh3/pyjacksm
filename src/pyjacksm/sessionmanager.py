@@ -155,14 +155,9 @@ class SessionManager( object ):
             print "Session %s does not exist"%name
             return None
 
-        s =  Session( path+name, name )
-
-	self.current_session = name
-
-	return s
+        return Session( path+name, name )
 
     def quit_session( self, name ):
-	self.current_session = None
 	return self.save_session( name, True )
 
     def save_template( self, name ):
@@ -212,8 +207,6 @@ class SessionManager( object ):
         f = file( path+name+"/session.xml", "w" )
         f.write( sd.get_xml() )
         f.close()
-
-	self.current_session = name
 
         print sd.get_xml()
         return 0
