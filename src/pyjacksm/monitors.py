@@ -35,47 +35,56 @@ class ConnMon (Thread):
 
         self.g = self.cl.get_graph()
 
+
+    def check_port (self, pname):
+	print "---------- got port ", pname
+	to_remove = []
+	for c1 in self.conns:
+	    print "check ", c1
+	    if c1[0]==pname:
+		print "take1"
+		if c1[1] in self.avail_ports:
+		    print "take2"
+		    self.cl.connect( pname, c1[1] )
+
+		    to_remove.append( c1 )
+		    if (c1[1],c1[0]) in self.conns:
+			to_remove.append( (c1[1],c1[0]) )
+
+	    if c1[1]==pname:
+		print "take3"
+		if c1[0] in self.avail_ports:
+		    print "take4"
+		    self.cl.connect( pname, c1[0] )
+
+		    to_remove.append( c1 )
+		    if (c1[1],c1[0]) in self.conns:
+			to_remove.append( (c1[1],c1[0]) )
+
+	for r in to_remove:
+	    print "remove ", r
+	    try:
+		self.conns.remove( r )
+	    except:
+		print "fail"
+
     def run(self):
 
-        avail_ports = self.g.get_port_list()
+        self.avail_ports = self.g.get_port_list()
+
+	for p in self.avail_ports:
+	    self.check_port( p )
+
+	self.progress_cb( self.num_conns-len(self.conns), self.num_conns )
 
         while len(self.conns) > 0:
             pname = self.cl.pop_port()
             if len(pname)==0:
                 break
 
-            print "---------- got port ", pname
-            to_remove = []
-            for c1 in self.conns:
-                print "check ", c1
-                if c1[0]==pname:
-                    print "take1"
-                    if c1[1] in avail_ports:
-                        print "take2"
-                        self.cl.connect( pname, c1[1] )
+	    self.check_port( pname )
 
-                        to_remove.append( c1 )
-                        if (c1[1],c1[0]) in self.conns:
-                            to_remove.append( (c1[1],c1[0]) )
-
-                if c1[1]==pname:
-                    print "take3"
-                    if c1[0] in avail_ports:
-                        print "take4"
-                        self.cl.connect( pname, c1[0] )
-
-                        to_remove.append( c1 )
-                        if (c1[1],c1[0]) in self.conns:
-                            to_remove.append( (c1[1],c1[0]) )
-
-            for r in to_remove:
-                print "remove ", r
-                try:
-                    self.conns.remove( r )
-                except:
-                    print "fail"
-
-            avail_ports.append( pname )
+            self.avail_ports.append( pname )
             self.progress_cb( self.num_conns-len(self.conns), self.num_conns )
 
         self.finished_cb()
