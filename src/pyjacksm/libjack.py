@@ -67,6 +67,12 @@ class LiveGraph(Graph):
 	    for dst in port.port_p.get_all_connections():
 		port.conns.append( self.get_port( dst ) )
 
+    def new_dummy_client( self, clientname ):
+	"""Add a Client object, for a client, that doesnt have jack ports"""
+	c = LiveClient( self.jserver, clientname )
+	self.clients.append( c )
+
+	return c
 
 
 

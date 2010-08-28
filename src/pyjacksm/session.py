@@ -116,7 +116,11 @@ def save_session( store, quit=False, template=False, cfg=Config() ):
 
     # weave the notifications into the snapshot graph
     for n in notify:
-	c = g.get_client( n.clientname )
+	try:
+	    c = g.get_client( n.clientname )
+	except KeyError:
+	    c = g.new_dummy_client( n.clientname )
+
 	c.cmdline =  n.commandline
 	c.uuid = n.uuid
 
