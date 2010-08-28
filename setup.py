@@ -11,7 +11,7 @@ setup(name='pyjacksm',
 	packages=['pyjacksm'],
 	package_dir  = {'pyjacksm': 'src/pyjacksm'},
 	package_data = {'pyjacksm': ["data/*.glade", "data/jack_sm_icon.png"] },
-	scripts=['src/jacksm', 'src/jacksmtray', 'src/jacksmdaemon'],
+	scripts=['src/jacksmtray', 'src/jacksmdaemon'],
 	data_files=[('/usr/share/dbus-1/services', ['data/org.jackaudio.sessionmanager.service'])],
         
         ext_modules=[Extension('pyjacksm.bpjack', ['src/bpjack.cc'], libraries=['jack', 'boost_python', 'boost_thread'])]
