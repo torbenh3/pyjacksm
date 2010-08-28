@@ -88,6 +88,7 @@ class ConnMon (Thread):
             self.progress_cb( self.num_conns-len(self.conns), self.num_conns )
 
         self.finished_cb()
+	self.cl = None
 
     def abort_monitoring (self):
         self.cl.abort_monitor()
