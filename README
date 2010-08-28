@@ -14,7 +14,5 @@ you need to manually fix the .service file in this case.
 jacksmtray should start the tray app, which controls the sessionmanager daemon.
 
 beware that this is still beta quality code.
-so it might happen that the sessionmanager might wait forever for some port to show
-up. which would never show up. etc...
 
 
