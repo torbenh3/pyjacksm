@@ -1,0 +1,114 @@
+#!/usr/bin/env python
+
+
+from optparse import OptionParser
+from pyjacksm.sessionmanager import SessionManager
+
+
+try:
+    import dbus.service
+    import gobject
+    from dbus.mainloop.glib import DBusGMainLoop
+
+    DBusGMainLoop(set_as_default=True)
+
+    have_dbus = True
+
+except:
+    have_dbus = False
+
+
+class print_session_loader( object ):
+    def __init__( self, session ):
+        self.session   = session
+        self.session.connect_to_signal("progress_signal", self.progress_cb )
+        self.session.connect_to_signal("finished_signal", self.finished_cb )
+
+        self.session.start_load()
+
+    def abort_cb( self, data ):
+        self.session.abort_load()
+
+    def progress_cb( self, num, of ):
+        print "%d/%d" % ( num, of )
+
+    def finished_cb( self ):
+        print "finished"
+	loop.quit()
+
+
+
+
+oparser = OptionParser()
+oparser.add_option( "--save", action="store_true", dest="save", default=False,
+                    help="Tell SessionManger to save." )
+oparser.add_option( "--saveas", action="store", type="string", dest="saveas",
+                    help="Save Session As <name>" )
+
+oparser.add_option( "--quit", action="store_true", dest="quit", default=False,
+                    help="Tell SessionManager to Save And Quit" )
+oparser.add_option( "--current", action="store_true", dest="show_current", default=False,
+                    help="show current session name" )
+
+oparser.add_option( "--list", action="store_true", dest="list", default=False,
+                    help="List Projects" )
+oparser.add_option( "--quitdaemon", action="store_true", dest="quitdaemon", default=False,
+                    help="Tell SessionManager Daemon to Exit" )
+oparser.add_option( "--quitas", action="store", dest="quitas", type="string",
+                    help="SaveAs And Quit" )
+oparser.add_option( "--load", action="store", dest="load", type="string",
+                    help="Load Session with <name>" )
+
+(opt,args) = oparser.parse_args()
+
+session_bus = dbus.SessionBus()
+sm_proxy = session_bus.get_object( "org.jackaudio.sessionmanager", "/org/jackaudio/sessionmanager" )
+sm_iface = dbus.Interface( sm_proxy, "org.jackaudio.sessionmanager" )
+
+if opt.saveas:
+    sm_iface.save_as( opt.saveas )
+if opt.save:
+    curr = sm_iface.current_session()
+    if curr:
+	sm_iface.save()
+    else:
+	print "No current project"
+
+if opt.quit:
+    curr = sm_iface.current_session()
+    if curr:
+	sm_iface.quit()
+    else:
+	print "No current project"
+
+if opt.quitas:
+    sm_iface.quit_as( opt.quitas )
+if opt.load:
+    s = sm_iface.load( opt.load )
+    s_proxy = dbus.SessionBus().get_object( "org.jackaudio.sessionmanager", s )
+    s_iface = dbus.Interface( s_proxy, "org.jackaudio.session" )
+    d = print_session_loader( s_iface )
+
+    loop = gobject.MainLoop()
+    loop.run()
+
+
+if opt.list:
+    projects = sm_iface.list()
+    for i in projects:
+	print i
+
+if opt.show_current:
+    curr = sm_iface.current_session()
+    if curr:
+	print curr
+    else:
+	print "No Session"
+
+if opt.quitdaemon:
+    sm_iface.daemon_quit()
+
+
+
+
+
