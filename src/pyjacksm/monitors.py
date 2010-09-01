@@ -37,14 +37,10 @@ class ConnMon (Thread):
 
 
     def check_port (self, pname):
-	print "---------- got port ", pname
 	to_remove = []
 	for c1 in self.conns:
-	    print "check ", c1
 	    if c1[0]==pname:
-		print "take1"
 		if c1[1] in self.avail_ports:
-		    print "take2"
 		    self.cl.connect( pname, c1[1] )
 
 		    to_remove.append( c1 )
@@ -52,9 +48,7 @@ class ConnMon (Thread):
 			to_remove.append( (c1[1],c1[0]) )
 
 	    if c1[1]==pname:
-		print "take3"
 		if c1[0] in self.avail_ports:
-		    print "take4"
 		    self.cl.connect( pname, c1[0] )
 
 		    to_remove.append( c1 )
@@ -62,11 +56,10 @@ class ConnMon (Thread):
 			to_remove.append( (c1[1],c1[0]) )
 
 	for r in to_remove:
-	    print "remove ", r
 	    try:
 		self.conns.remove( r )
 	    except:
-		print "fail"
+		pass
 
     def run(self):
 
@@ -93,22 +86,5 @@ class ConnMon (Thread):
     def abort_monitoring (self):
         self.cl.abort_monitor()
 
-
-if __name__=='__main__':        
-
-    def pline( line ):
-        print line
-
-
-    x = ProcMon( 'for i in `seq 3`; do echo -e "bla \\n"; sleep 1; done', pline )
-
-    x.start()
-
-    x.join( 1 )
-
-    print "main exit"
-    import sys
-
-    sys.exit(0)
 
 
