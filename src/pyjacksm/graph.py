@@ -1,5 +1,8 @@
 
 import os
+import string
+
+from config import Config
 
 JACK_DEFAULT_AUDIO_TYPE="32 bit float mono audio"
 JACK_DEFAULT_MIDI_TYPE="8 bit raw midi"
@@ -93,7 +96,6 @@ class DummyPort( Port ):
 	self.dummy = True
 
 
-
 class Client( object ):
     """Baseclass for all Clients"""
 
@@ -109,8 +111,21 @@ class Client( object ):
 
     def get_commandline( self, store ):
 	client_session_dir = os.path.join( store.path, self.orig_name ) + "/"
+
 	if self.cmdline:
-	    return self.cmdline.replace( "${SESSION_DIR}", client_session_dir )
+	    conf = Config()
+	    cl = self.cmdline
+	    # do replacements
+	    cl = cl.replace( "${SESSION_DIR}", client_session_dir )
+
+	    cl = cl.split( " " )
+
+	    # check path_map
+	    if conf.path_map.has_key( cl[0] ):
+		print "using override from config:", cl[0], " -> ", conf.path_map[cl[0]]
+		cl[0] = conf.path_map[cl[0]]
+
+	    return string.join( cl, " " )
 	else:
 	    return ""
 
