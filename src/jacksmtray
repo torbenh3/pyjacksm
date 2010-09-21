@@ -79,7 +79,10 @@ class loading_dialog( object ):
         self.dialog.destroy()
 
     def progress_cb( self, num, of ):
-        self.progress.set_fraction( float(num)/float(of) )
+	if of != 0:
+	    self.progress.set_fraction( float(num)/float(of) )
+	else:
+	    self.progress.set_fraction( 1.0 )
 
     def finished_cb( self ):
         self.dialog.destroy()
