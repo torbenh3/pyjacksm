@@ -118,6 +118,7 @@ class main_win( object ):
             for c in cls:
                 self.treestore.append( siter, (c, sname, c, s) )
 
+	self.window.connect( "destroy", self.destroy_cb )
         self.window.show()
 
     def row_activated_cb(self, treeview, path, col):
@@ -129,6 +130,9 @@ class main_win( object ):
 	    self.textbuffer.set_text( cl_log )
 	    self.textview.scroll_to_iter( self.textbuffer.get_end_iter(), 0 )
 
+    def destroy_cb( self, w ):
+	global main_w
+	main_w = None
 
 		
 
@@ -240,7 +244,9 @@ class popup_menu(object):
 
 
 def icon_activate( icon ):
-    main_w = main_win()
+    global main_w
+    if not main_w:
+	main_w = main_win()
 
 def icon_popup( icon, button, activate_time ):
     p = popup_menu( button, activate_time )
