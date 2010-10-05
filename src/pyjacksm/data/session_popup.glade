@@ -5,6 +5,14 @@
   <object class="GtkMenu" id="popup_menu">
     <property name="visible">True</property>
     <child>
+      <object class="GtkMenuItem" id="titleitem">
+        <property name="visible">True</property>
+        <property name="sensitive">False</property>
+        <property name="label" translatable="yes">Session:</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+    <child>
       <object class="GtkMenuItem" id="quit_item">
         <property name="visible">True</property>
         <property name="label" translatable="yes">Quit Session</property>
@@ -54,7 +62,7 @@
       </object>
     </child>
     <child>
-      <object class="GtkMenuItem" id="menuitem3">
+      <object class="GtkMenuItem" id="save_item">
         <property name="visible">True</property>
         <property name="label" translatable="yes">Save</property>
         <property name="use_underline">True</property>

@@ -199,9 +199,18 @@ class popup_menu(object):
 
 	self.menu = bb.get_object( "popup_menu" )
 	self.quit = bb.get_object( "quit_item" )
+	self.save = bb.get_object( "save_item" )
+	self.titleitem = bb.get_object( "titleitem" )
 
-	if not sm_iface.current_session():
+	current = sm_iface.current_session()
+
+	if not current:
 	    self.quit.set_sensitive( False )
+	    self.save.set_sensitive( False )
+	    self.titleitem.set_label( "No Current Session" )
+	else:
+	    self.titleitem.set_label( "Session: "+current )
+	    
 
 	bb.connect_signals( self, None )
 
