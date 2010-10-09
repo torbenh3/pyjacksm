@@ -67,5 +67,7 @@ class SessionManager( object ):
     def save( self, quit=False ):
 	sto = self.get_storage()
 	save_session( sto.open_overwrite( self.current_session ), quit )
+	if quit:
+	    self.current_session = None
 
 
