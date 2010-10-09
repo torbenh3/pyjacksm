@@ -21,6 +21,7 @@ class Session (object):
        >>> store = storage.Store( "/home/torbenh/jackSessions", "jr01" )
        >>> s = Session( store ) 
        
+       this doctest would only be useful with a testStore
     """
 
     def __init__( self, store ):
