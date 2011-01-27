@@ -85,6 +85,7 @@ class ConnMon (Thread):
 
     def abort_monitoring (self):
         self.cl.abort_monitor()
+	self.cl = None
 
 
 

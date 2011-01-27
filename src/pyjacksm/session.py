@@ -83,6 +83,7 @@ class Session (object):
 
     def abort_load (self):
         self.connmon.abort_monitoring()
+	self.cl = None
 
     def do_progress_cb (self, num, of):
         print "do_progess %d / %d" % (num, of)
@@ -91,6 +92,7 @@ class Session (object):
         
     def do_finished_cb( self ):
         self.finished_cb()
+	self.cl = None
 
     # defaults..
     def progress (self, num, of):
