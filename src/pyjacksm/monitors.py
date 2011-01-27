@@ -3,10 +3,12 @@ from threading import Thread
 from subprocess import *
 
 class ProcMon (Thread):
-    def __init__ (self, command ):
+    def __init__ (self, command, name, callback ):
         Thread.__init__(self)
         self.command = command
         self.daemon = True
+	self.name = name
+	self.callback = callback
 
         self.log = []
 
@@ -20,8 +22,10 @@ class ProcMon (Thread):
             if len(self.log) == 100:
                 del self.log[0]
             self.log.append(line.strip())
+	    self.callback(self.name)
 
         self.log.append( "*** Program terminated !" )
+	self.callback(self.name)
 
 
 class ConnMon (Thread):

@@ -40,11 +40,12 @@ class Session (object):
 	# and insert the missing ones into the procmons
         for ic in sd.iter_infra_clients():
             if not g.has_client( ic.name ):
-                self.procmons[ ic.name ] = monitors.ProcMon( ic.cmdline )
+                self.procmons[ ic.name ] = monitors.ProcMon( ic.cmdline, ic.name, self.do_logs_changed_cb )
 
 	# set callback defaults
         self.progress_cb = self.progress
         self.finished_cb = self.finished
+        self.logs_changed_cb = self.logs_changed
 
 
         # rewrite names... so that there will be no conflicts.
@@ -60,7 +61,7 @@ class Session (object):
         # create procmons for the clients
         for c in sd.iter_normal_clients():
             cmd = c.get_commandline( store )
-            self.procmons[c.name] = monitors.ProcMon( cmd )
+            self.procmons[c.name] = monitors.ProcMon( cmd, c.name, self.do_logs_changed_cb )
 
         self.connmon = monitors.ConnMon( conns, self.cl, self.do_progress_cb, self.do_finished_cb )
 
@@ -85,10 +86,12 @@ class Session (object):
         self.connmon.abort_monitoring()
 	self.cl = None
 
+    def do_logs_changed_cb (self, name ):
+	self.logs_changed_cb( name )
+
     def do_progress_cb (self, num, of):
-        print "do_progess %d / %d" % (num, of)
+        print "do_progress %d / %d" % (num, of)
         self.progress_cb( num, of )
-        print "done"
         
     def do_finished_cb( self ):
         self.finished_cb()
@@ -101,6 +104,8 @@ class Session (object):
     def finished( self ):
         print "session loaded"
 
+    def logs_changed( self, name ):
+	print "logs changed: %s" % name
 
 def save_session( store, quit=False, template=False, cfg=Config() ): 
 
