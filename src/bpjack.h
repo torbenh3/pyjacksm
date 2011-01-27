@@ -76,6 +76,7 @@ class JackClient : public boost::enable_shared_from_this<JackClient>
 
         std::vector<JackSessionCommand> session_notify( const std::string & target, int type, const std::string & path );
         std::vector<JackSessionCommand> session_notify_any( int type, const std::string & path );
+	int client_has_session_callback( const std::string & name );
 
         std::string get_client_name_by_uuid( const std::string & uuid );
 
