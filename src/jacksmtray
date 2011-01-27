@@ -118,6 +118,10 @@ class main_win( object ):
             for c in cls:
                 self.treestore.append( siter, (c, sname, c, s) )
 
+	self.current_client = None
+	self.current_session = None
+	self.sig_con = None
+
 	self.window.connect( "destroy", self.destroy_cb )
         self.window.show()
 
@@ -130,9 +134,28 @@ class main_win( object ):
 	    self.textbuffer.set_text( cl_log )
 	    self.textview.scroll_to_iter( self.textbuffer.get_end_iter(), 0 )
 
+	    self.current_client = clie
+	    self.current_session = sess
+	    if self.sig_con:
+		self.sig_con.remove()
+	    self.sig_con = sess.connect_to_signal( "logs_changed", self.logs_changed )
+
+    def logs_changed(self, name):
+	if not self.current_session:
+	    return
+
+	if self.current_client and self.current_client == name:
+	    cl_log = self.current_session.get_client_log( name )
+	    self.textbuffer.set_text( cl_log )
+	    self.textview.scroll_to_iter( self.textbuffer.get_end_iter(), 0 )
+
+
+
     def destroy_cb( self, w ):
 	global main_w
 	main_w = None
+	if self.sig_con:
+	    self.sig_con.remove()
 
 		
 
