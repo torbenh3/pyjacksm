@@ -105,6 +105,7 @@ class DbusSession( dbus.service.Object ):
         self.session = session
         self.session.finished_cb = self.finished_signal
         self.session.progress_cb = self.progress_signal
+        self.session.logs_changed_cb = self.logs_changed
 
     @dbus.service.method( dbus_interface="org.jackaudio.session", in_signature="", out_signature="" )
     def start_load( self ):
@@ -134,6 +135,9 @@ class DbusSession( dbus.service.Object ):
     def finished_signal( self ):
         pass
 
+    @dbus.service.signal( dbus_interface="org.jackaudio.session", signature="s" )
+    def logs_changed( self, name ):
+        pass
 
 
 gobject.threads_init()
