@@ -165,12 +165,6 @@ JackClient::reserve_client_name( const std::string & name, const std::string & u
     return jack_reserve_client_name( _client, name.c_str(), uuid.c_str() );
 }
 
-int 
-JackClient::client_has_session_callback( const std::string & name )
-{
-    return jack_client_has_session_callback( _client, name.c_str() );
-}
-
 std::vector<JackSessionCommand> 
 JackClient::session_notify( const std::string & target, int type, const std::string & path )
 {
@@ -267,7 +261,6 @@ BOOST_PYTHON_MODULE(bpjack)
         .def("get_ports",       &JackClient::get_ports )
         .def("session_notify",  &JackClient::session_notify )
         .def("session_notify_any",  &JackClient::session_notify_any )
-	.def("client_has_session_callback", &JackClient::client_has_session_callback )
         .def("get_client_name_by_uuid", &JackClient::get_client_name_by_uuid )
         .def("reserve_client_name", &JackClient::reserve_client_name )
         .def("connect", &JackClient::connect )
